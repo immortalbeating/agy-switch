@@ -1,0 +1,60 @@
+# User accounts, OAuth credentials and local preferences
+.agy-switch/
+.gemini/
+.antigravity/
+accounts.json
+accounts-*.json
+accounts.*.json
+google_accounts.json
+oauth_creds.json
+oauth_creds-*.json
+oauth_creds.*.json
+prefs.json
+credentials.json
+secrets.json
+oauth_clients.local.json
+*.local.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local data and logs
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.log
+*.bak
+*.tmp
+*.tmp-*
+
+# Build outputs, generated schemas and executable packages
+**/target/
+/src-tauri/gen/
+dist/
+build/
+node_modules/
+__pycache__/
+*.py[cod]
+*.exe
+*.dll
+*.pdb
+*.msi
+*.msix
+*.zip
+*.7z
+
+# Local design references and screenshots
+/.ref/
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

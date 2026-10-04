@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGY·SWITCH</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAWxklEQVR4nO16C5QdVZnu9++9q86pOo9+pDvdeREakhjygCjPAe5K4oAIFxkd6FbwPXiJj3sddWYc7hJud1/WOHjR0RmXMxcIzgJmdNk9OuADRRzTLS5AkMvDpAOBmAB5dvp9nlW19/7v2nW6Nbk8BEnQq+5ee+0+VXXq7P/7v/9ZBfxh/GH8Xg/6Tf0wMwh9vY3f7+tnIjB+DwbxQLfkXojnnXCgrF+vuLf3eed+JwYfIRhhYGAg/+itn1jx6OaPrvnBFz7aAZK/vLa7+5cffhdMYGCgW/b0DBr0snj2De96e1jed4Uqld9AZdshIylREdM29nfXTeGepzOdN559/S1P8+zeCMfWNAjHeDjKU8+guf/bnzzpOPl/NreZ8bNVOUIyw+ASgSoSXl1BRBJIMqhXvdKEKFy/6ObvfJrZHnMQCK+B5u+/68PnLsyO3Fm0463VcatlXZKsQ6iqgKwIEjXBoipY1mD9SCqIAOOJ/5W2ru++m/vTLfKxAkHhGA3mXkHUb+4bumZts/fQt3VcahqtZbSnWClJcBOSwBKQUhApIlYkYk0s64meR3TF2M6LDZF4D192qcTgoDkW+xTHKsQNDo7QfQP3BSS3fsV41abJJNCRyKqaCFCXWdRFNl1j5WYmnYnyYKUio6RnkiSZR/rdu973to/T4KA5Vo5RHIubDg52C0f9UsdNn/Jb4jUHq56uiUBVKEDVTRGiJkNUZYCaChClIPhIVAZa+bBKQXuegk5MZ71y3b0fev8JGBy0xyJEqmNBfaDf3rmld5kOR/5iXwkWCGUMAUUEJQgeEXy3SgutCBkJWGlhlYX1LNgwlLEUWYMsIbd8ZvwGAl3KIyNHHQBxtG/oqO+yurq351obiOyMDm0FIZURosQhypxHmfIoiRzKIo+qzKGqQtRUDpFssCHyMoi9lBEyTmBbgT999MP/5cxjYQrqaN6st7dX9PT0m9vuvq4r9nb0lEvE1mYlrIR0kyU8KHjE8B0LJKAFoKWFcVMlyBgDNgbWaHhagz1lCyREW3nyrwBcht9qBmwYSu9XD/ZdZfJ+tqyzpsxZKtsAJTfZsSCHEgooUQFlKqIsCijLPMrKMSGPmufYEKZsiFWA2MuoChMXGZc8fPXVy1IWHEVfoI6m5yca1nfcsbnwrPzpe8tlgch6wlgPsApkPUjrQbGCshIZFkhASAQjkQaJMtBKw5gYVmlYFcPaBD4nsDY27VJ67ZPj7wfwKQylQNujsW+BozQGMeDuRc8Vnt5ocv6CqbpnyyYQFROgYkJUbC61/5LzASii5GbKgCJKogll2YSKaqxlVUDVc2zIpYyIVChKVoISc/k/b9mSxfCwmUuV5xyvS7p+owwYHBxM9zKjkneBfa4b32rjC619wPoQNgORssCHYg8JC2gmJAQkxDBCN6aKYWwEY30YjqE5grWRsLZuC57qWvvde9YTcDd3D0gM9qTJEVG/nUu70T1giYhfUwCYmYjIfO57n2udxIE/jkqC6tqTic3CWh9ssiCTgTA+VDoVtCVoSCQMaDAMHAAGRkSwMgOjHAh1OBNy9zCsbFEKCiv1iwDcPbRqG81mm3bH0A1voXyxTKdt2uKIwQMDknoa4LwmJtA31JfSL1HJmzjItVaijKnZkOomQN3kZmcedZtHzeZQMznUuIAq51G1OVScY6QCSiKPsiygJJ1jLKCiirOrc5AFMUUZFz8uHvjcQLChv988fNP+9Heb89TRJbf/cPLRz153237OOeHTvgO7EuI1AGDk0EhKuWnWf1q2Ga7rHMc6QKTDdCY6hJ5d0+M2bEwHkA1RQ4A6AtTIZYd5VA6bzhdUvQJqmbyYEhnry+CEBRNPnulKo1NbFjiu0/7iqu+ZiRndfOjeay577pMP7vnZLRe7CtSZAvOAPMYmwDTYQ+a2227LPWCeOadWlhRrXxqThZvaBNAmD2tywGwkkKzgsYAyBI8BHzadWbIIKEGWEoQiQiQi1GSEkCPUuYZq7FnPF1Qv6w1ENAR8OgYkJuafd6X0J0lv+V9JMDW+atGCsW9NPHbDlx/LvOWviVaOOTb0bVvF/f0NX3FUy+GBgQHZ09Njrr3zi+ePN/H3J8vWapMV2uQQmzyklmhN6jjOTmOhnUKLKaNgI2TYwgMgRSM9FiItDiGJIMlCEkMRN47BQlgDYs1Z3yPrmYlMU32EQIpkVuXbTzjNVvfA7noQwhgLoSE620U9PP6ZsczKTyxZ95FvHDMGfKl9WwpiyfcuiYWCMdbWdCBUDKyxe7Am3ofFtQNojmcQJlVkdB1ZHSFr41RIckaYAkCpOihdOe2QpTP9TKmxClcyaweaaKW6PBdKpN+Jd/+ISSqSKgOSJFh4sAdHdTaYXLq4febr0z+99mvjdkHvrd85+FRfXx8fHiXoVcqf9jK5l8UHTv/fj80of01c8exiXRKrq7uxsDaOMEmQ0Qa+iRGYCFkTI2NieEggwBBCpEK6PaVypiA4ADj9X7iDbnXHRCP6swALASt9CSZLEBCOSXNgNlaHG1lrylasXq3GkpP/vX3dX17K3EdzYfNVO8He3kZb+5rVNy8ta7EsqQDLo/20troT+aiMxEhoFiBmZGyCnK2jiWtokTU0qQhFL0HRT1DMuKnTtZDVKAQG+axFLmCEboaMIAQyIeC7NScpU/AkhHZTCGHAwjqUUhCdetm4bBLCLjld2Ob3mHru4n9IqTW4mo6aCQxtgEA/7LPGniEzTdmu8WdMezQuE23gFOMbi5yJUaQYwvMx4RXwHGcRCR9WqIbmRaq+VMPODISkVPOzDSNIYSHBkOz8gk0LKSFkyv7OrmJ6PTtieBXw3kcg6lEKBjc3g9vOQpw724bFdSKIJ85xW0Z391EAgNlxFhs2wN7rnJbKX+ZsvCmppvxUlpExGnkFjFM77qu3YnfcghkuIEqTGpFeJ0GpDTmGpA4PDA8Wii0yaWQw8FkjA40sawSsEUIjwxp+XMVZ561Ee2cRFFv4yYMQtQpsEIDbV8KEJ0NjMQMZl2o5ajw5t/tXBUD3wIAcJEqzrH7q5813bC88VBvaoJLp1GN5FiiQRQ0h7qoswK64PY31Ej6IPAjpgeBCM83hmI7UKMm6o+mxGDbNDzk9o0FwUcAALjXmBDFKGKt6aM+3gaMyaM/PwWEBvGg9jFgOg7yRhSaZWbzMmzw4fXNb18p/Y2bhMtZfCwB26S4gnPD8z73ZTYvPzdx0/vnTD0395CTjJ/M4NiyMFXkJ7E068PBMB8qmAE8EUCoHQyE0Z8DwAVKp7h11nbTO0TntE9uU/sqxwLFBGHc1MmRQm2VBhmME0PBEDXvLnlmWnQ8/Pii49TgY7wIyptnCy3K46HgZGX9mfKz08baulV9Os8IXqBHUy9I6s3TIEWDeumPn+X8kw8+8ZXr/u5h55n2bv3hWsTkgGZV0Blbtqrdh2/QCgEIor4CYCtDIwSIAhI/IKESJSKkvZ12w1an6kZGEbOr9bRohXOLrCqWYnEloJDCIodO/fEZj18Rk/eSKiRcXF7Yk3sVgQyaXz0gU2lGN+e5D05VPHL9izUijZqAXLJ/pV3V4+vv6HHJmy9afdP5N04nXPiJaPtyRlHaMHN/8OnfNB26/+Z4wMOc1VyZMqeLLJyc7IWUzLDUhoSIM5WEQILY+arFEex7oagMWNgNthUYiVIsYkxVg9xjw1EEnOiHvI3V4KRMcAGSQEW61yDpIKQJqk3zhOcHEKcuLOVsrZ5qa81SPzUi1rj8/77jlm1PmbtmiaOPGFOJXBMD6LVvU8MaN2lHkyn373jNsmz6zqxx2RpUqb14hx6/UuP6hQ2Pn/OvD97xNVvZz1gb0xOh8xLYJVs6DoSI05WCc22IfGQWc1UXYsEKgvdiwfU5FbXh996kSM3ZPEO57WmL7AQVrDRRZ+MK10NxsAJF1YCC2GSS0rG16+9vWZz5VLuvdLc3Fju8PP7Clp6cnbjRn+9Jc4KWUrF7E1jFMpL/6sweX/FPL8r/9uml+59hoDExP6ewCJWUmbHsqj8/uSPJ4UgruaF9CB6dbUO1sAigHjQKsCFx2j9h4qZbffLLEmk6B0dhi3OX/zvZd+LIMtgytgSQ20J5BoVjC9E4gn10ESwTN9hdPCht/Di4PfjZHIwfK4qpFK+/4f2RITRbofynZX4gBrnwkDgBc8ty+qx7gpuv2JuF8fbBkXPLlsJFZF6vZDedNXXImSTsHRmnb2wkkLIOM0y4AgzQsek7Q2J0D3NaEsZCaIRILE2twpGGrMapTddQmSpDVGpa0LcXizhNhbAxPONAA3zlGxwrSbuW8LyiZefI/nXvcc/cDq2R39+rk12uIcKN2/tRjj3bd2db1T99F8YIZp/V4xggpZPqckhm6YkGa3U8o57XZEKSDwmgYbmgV1kKYhrAu6lrLiJ2wzhE7AKzL1NhdBqdcdw8kApwIZIVEtpCDlh72jT0DJRQ6O5amILgeIrnMMlWdK6WMMZkmlai2S3p6/ujHvb1MPT0vX/gjUuHelF/EK4n8M8PMedV6YmBiK0m4CJUKMnfnBlSz0rnfc1K73IZsYwqCMyRDLoqzy3kaj/+JGxybjfXpr88WQEJJKCUBz4OWCpEUqAmFnft3oVYvpwK7RqCGa6bKdMaQohq7TlLuT6666iqvv9/x7ZXVN+oX//X1pcvpSTJ+Aez0BQtUa39G8rYxC1QNJIlUGJkX8Ny3rExtd05+l805WsOZgPuzBGUdQ2x6jWOJ+MXkhqm41ZmPRroK7SE0AiohFKGwNN+KUzqDFKdvPqrhexLa2kax4xgpICpRZMNs8wp94gfOBuhH3QMsXH/ilQMwO6az8xQTBWvq1n5GgW7rUPhWWaA2oSGqGkFbFu8JgPvv3YlDU+6ZvnuI4TIEkdLZGobRGu8/fzFOXBQittyo+V1eP0uYudeBUnNw/fR0dedd7AcCQchLgUCJ1Ey0Mdh1SOPRPQK5DEE78jnUUxDIWi8Qxp//Due78QoHHf5hgFn2ENkdh2buKrQV3vzE/lpsDPtbPYHNMbB1bx3SUzhPlzD6wwOoawXrnFgiYI2EYIlKZHHWMh9XvakjzfV8T1iX8Ajh3GQa+lwDlecsNa0F3D9p9HFWmF6XWoibzn+4MDlegfz7HxBqiUrDoiuUnMUoGM76PslkZqy0b2jlHddfOg7nsF6mI1SHf+h2ZkzEk4cO/bnnq4ETO4NTdh+K7KpI0zVC0N3HZfHvEeHhsSyOD3LIuqTVCe+eb7nS1wgsbDV49xubkMuSzYWhaCoI6QBwtE0BaFStjTxgVvMNQRurEwpzjEj7AEClDhSzVXveSSwGHmL4IcFwI3y6crCexKaQb2nLtq59B8BfWt8HOezcxStlwGEtbn7ve9+bveaGf/h8rq34wT0zBuOliItK0LemYnx5QuOEbRWImgQblWqfWGGmBrz9NODS13um2BTKerm6XxAeB7jObCsgWEHUqhNzwLCNfSk9QTJr2Rk2taRtMWBfnCQ/FiQnnF1JK4pQ6ko/l9u4b7RsP/t9KfZMKQS+cwHOvFzGaG02mxGojo00bb9m3U033qhnq6xfyQJ6oYOuahJCWGbGE/sOvTtoKn5hWsvWqXrCt99/iB7ZqxGoECJRKQCu81CPJBY2Jfjvbxama1FOxpXq8NTe0XesWdN1AK9yrF+/Xt3yte/8uFgMz/z+YxXzpSFPhr5ztc4FOBBcTIbJ5XxpJ7b3fO2Tqwe7B1i+HGcoXhAV10qy1vWU5cqF7bfv2b7rnDbPzoxXgK2jhgt+DtIo98QfghUkZGqnbz2FbdeCnCxNlr9zzx0Db3bCb9nCyt1nbjo/s4VZzU137PBr0uNHfscfHh7WlYnJj0Wxic7oUjjjeJOahVOfZYK1ziScPya2fvu13d3dctW2VPu/MiSqFzsxm02Zrcz+GqIndo+O/8WDu9TNymSsJyQZdmHQCS5QqgucfUJsN64KaXqquuuHd36lZ9OmTXXXMd640QW5VzUMMysieuCJZye+2bGopftP1pX1E/u1qmqV1hiui+CIUKtFJpdvX8unXve+/qvplvW9W9Rw/4sXQi+rJ/iRoaG0mPjoV5+yO0cJTSrDwgnOMo33sRaYn9e4dJ3gIKNoZnr6Lzdt2lR1m3btchyd4cxRGFP929J0PHPCfJ8uWac5im3aU3C+0GWhLq2IY2s57Pz05b3fbNuADdZVtC91Y/FSJ3t7WQxvfKO+4oZvL22Zt/TvhBYsrRSO9m6ye8XLWrz9VGNetySU42Mzw6e+buE3HM2JXrXmjzDJoaEhsbpr8SOlien/kcv7cv1yYc5ZpjFTbzDdgWCZRBTFTGHT/Kj4hi/095P99sK3yF8PAGYaWd1oQoedq/5FZtuabGSse8PHdfMc9at1iwtOMnz2ch/lclSvTh34kPO+LpziKI8NGzY4U5Cjz227cXq8/FixkJVvP43N8a0a5cjlqA0mWCZZrcZaFRe989LPbP/gw5tOS666kb1XCgB1DyJNKT94645/9ItLz41KFcOQ0tVMroVVrrn63uLiU4QpFjOyPD318VPXvm47W+u0f1ReXjhiQ7OJzcaNG+u1ytTHMr6k5pzCn51ruSnQqCeN9poBQRsrq3VtqLj0i5d++pE33bSJEucPXjYA3bP59H+79YnrwrZlm6qlimYoySxS4WdqhHVLDN55Okx7a6jGR2d+dP9/3HmL09DRenPjRUBIWbB2+ZKh6UPjNxSLWbm0RZgPbQBCT6OWpNe4B2mkk0TE1pdq3opvvPOGn21wztCZ9PPuiecLn8bPj9868rFs50mfH58o6ygh5ZxdbASmK4y1Cy16TmWzqC0nk3r1yScfHj7jwgsvLM1u8pi/9z/X8Hhq79RdxXlNFx4aq+gnRqE2DxNmIg+57GyRRtaGYUb4tjJJ01vP/Oonz3q6tw/kfMPcvcThN3Ye0wl/9W0PL8sWO6+vVSLXlZLussQI1CKLjSssrjidbUveF2zjUmls9PKLLrpoZnDQkePYC/9LDFhMT++7MqrUfh6EWbV8Hsyfn8dYOi9BqdbQq8vm4nqUqHy+BcHx17r6oOHXfjnE4R9Wr+5LT2obrGWvKVOvazZWUrUOBNLgstdb/Oc1bAqBL3IeJxMHRi9Zt7rrEaeRnldQgr7aMetj6LRVq/ZPHDhwRU5xkvE9saDA9r9usDj3xBj1xKIaAbEmMT0D1ixWuO8OdB9pouqIO3c3lree3mR31ax5pM4IPIs1C4DXLya0htBhEKpAJcnEwbGe15+0ZMhlbkcz5L1Sf0BEP9n61IHL5nW0fl2pQOmZqrn8DMg3HKfx093AwRkS8wsGl6zLn3z9zp0nE9Hjsw9IUiCOAKB9qEGPzqaged0qJVe0UuR6HKGfNqJofkeoolJt98H945eftmrJA7MbeM2FfwEQvvn4jr0XzZvf9i+5BYX5B0Yres0CiJUdjEhbKmSF6WjNBXue9Vvd9wZfLEVmZpf/0w/uf7xjZM/Mg2Oaefc087MV5j0zzM+Olb92771bj3PXunwdvyXDsdCtP31818q9k7X7xiLmp8eYtx8wPLIv4oMR8/bnprb39vb66ROil3p3iGdP/v3ttxe3Pzf+P58Zq3z36f2lGx//+b71c9e4TA+/ZWM2BLtBO/dPXb13Mnpyx/7S7p2j1f0/Hy3dd/+2p5e7ky8UCp83XuztKmc7vyq3/k0Ot7/DS2j3UuVdd91VPOySl98w5YY5uHJUpGXswG+f1l9kpPs+4gDRi2qe8Ls6nAJn/30N85M/jD8M/H82/i8t9efUx0ahfQAAAABJRU5ErkJggg==">
+<script>
+  (function() {
+    const saved = localStorage.getItem("agy.theme") || "system";
+    const isDark = saved === "system" 
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches 
+      : saved === "dark";
+    document.documentElement.dataset.theme = isDark ? "dark" : "light";
+  })();
+</script>
+<style>
+:root {
+  /* 基础与字体 */
+  --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", Menlo, monospace;
+  
+  /* 浅色模式（纯净冷灰 · Studio Slate - 告别发黄发暗） */
+  color-scheme: light;
+  --bg: #f8fafc;
+  --bg-gradient: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 180px);
+  --header-bg: rgba(248, 250, 252, 0.88);
+  --panel: #ffffff;
+  --panel-card: #ffffff;
+  --panel-hover: #f8fafc;
+  --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --border-hover: #cbd5e1;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+  --card-shadow-hover: 0 3px 8px rgba(0, 0, 0, 0.06), 0 10px 20px -3px rgba(0, 0, 0, 0.05);
+
+  --ink: #0f172a;
+  --ink-dim: #475569;
+  --ink-mute: #94a3b8;
+  
+  /* 精致语义强调色 */
+  --brand: #2563eb;
+  --brand-hover: #1d4ed8;
+  --brand-bg: rgba(37, 99, 235, 0.08);
+  --mint: #059669;
+  --mint-bg: rgba(5, 150, 105, 0.08);
+  --mint-glow: rgba(5, 150, 105, 0.25);
+  --amber: #d97706;
+  --amber-bg: rgba(217, 119, 6, 0.08);
+  --red: #dc2626;
+  --red-bg: rgba(220, 38, 38, 0.08);
+  
+  /* 活跃卡片与网格 */
+  --active-card-border: rgba(5, 150, 105, 0.45);
+  --active-card-bg: linear-gradient(180deg, rgba(5, 150, 105, 0.04) 0%, #ffffff 48px);
+  --active-glow: 0 0 0 1px rgba(5, 150, 105, 0.2), 0 6px 16px -2px rgba(5, 150, 105, 0.12);
+  --quota-bg: #f8fafc;
+  --quota-border: #f1f5f9;
+  --quota-track: #e2e8f0;
+  
+  /* 弹窗与开关 */
+  --modal-backdrop: rgba(15, 23, 42, 0.45);
+  --modal-bg: #ffffff;
+  --modal-border: #e2e8f0;
+  --switch-track: #cbd5e1;
+  --switch-thumb: #ffffff;
+  --switch-checked: #059669;
+}
+
+[data-theme="dark"] {
+  /* 深色模式（曜石暗黑 · Obsidian Zinc） */
+  color-scheme: dark;
+  --bg: #0b0c0f;
+  --bg-gradient: linear-gradient(180deg, #12141a 0%, #0b0c0f 180px);
+  --header-bg: rgba(11, 12, 15, 0.88);
+  --panel: #16181f;
+  --panel-card: #15171d;
+  --panel-hover: #1b1e26;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+  --ink: #f3f4f6;
+  --ink-dim: #9ca3af;
+  --ink-mute: #6b7280;
+  
+  /* 精致语义强调色 */
+  --brand: #3b82f6;
+  --brand-hover: #60a5fa;
+  --brand-bg: rgba(59, 130, 246, 0.12);
+  --mint: #10b981;
+  --mint-bg: rgba(16, 185, 129, 0.12);
+  --mint-glow: rgba(16, 185, 129, 0.4);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245, 158, 11, 0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239, 68, 68, 0.12);
+  
+  /* 活跃卡片与网格 */
+  --active-card-border: rgba(16, 185, 129, 0.5);
+  --active-card-bg: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, #15171d 50px);
+  --active-glow: 0 0 0 1px rgba(16, 185, 129, 0.3), 0 0 24px -4px rgba(16, 185, 129, 0.2);
+  --quota-bg: rgba(0, 0, 0, 0.22);
+  --quota-border: rgba(255, 255, 255, 0.04);
+  --quota-track: rgba(255, 255, 255, 0.08);
+  
+  /* 弹窗与开关 */
+  --modal-backdrop: rgba(0, 0, 0, 0.75);
+  --modal-bg: #161820;
+  --modal-border: rgba(255, 255, 255, 0.1);
+  --switch-track: #2a2e3b;
+  --switch-thumb: #ffffff;
+  --switch-checked: #10b981;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 13.5px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+#app {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 12px 36px;
+}
+
+/* ---------- 吸顶导航与工具栏 ---------- */
+.header-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--header-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 10px 0 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.brand-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.15));
+  flex-shrink: 0;
+}
+
+.brand .ver {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-mute);
+  background: var(--quota-bg);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 2px;
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--ink-dim);
+}
+
+.live-pill i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-mute);
+  transition: all .2s;
+}
+
+.live-pill.on i {
+  background: var(--mint);
+  box-shadow: 0 0 8px var(--mint-glow);
+  animation: pulse-dot 2.4s infinite;
+}
+
+.live-pill.off i {
+  background: var(--red);
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* 按钮基础 */
+button {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  padding: 6px 10px;
+  background: var(--panel);
+  color: var(--ink-dim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all .14s ease;
+  white-space: nowrap;
+  outline: none;
+}
+
+button:hover {
+  background: var(--panel-hover);
+  color: var(--ink);
+  border-color: var(--border-hover);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 工具栏（单行排布，绝不折行） */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0 0;
+}
+
+.btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  flex: 1 1 auto;
+  padding: 6px 8px;
+}
+
+.btn-primary:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  flex: 1 1 auto;
+  padding: 6px 8px;
+}
+
+.btn-icon {
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  flex: 0 0 29px;
+  border-radius: 7px;
+}
+
+.btn-icon svg {
+  width: 13.5px;
+  height: 13.5px;
+  stroke-width: 2.1;
+}
+
+#btnToggleIde.stopped:hover:not(:disabled) {
+  color: var(--mint);
+  border-color: rgba(16, 185, 129, 0.45);
+  background: var(--mint-bg);
+}
+
+#btnToggleIde.running:hover:not(:disabled) {
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.45);
+  background: var(--red-bg);
+}
+
+#btnRestart:hover:not(:disabled) {
+  color: var(--brand);
+  border-color: rgba(59, 130, 246, 0.45);
+  background: var(--brand-bg);
+}
+
+/* 路径设置输入框与状态 */
+.path-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.path-box input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  padding: 6px 9px;
+  background: var(--quota-bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s ease;
+}
+
+.path-box input:focus {
+  border-color: var(--brand);
+}
+
+.path-box button {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.path-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+
+#idePathDetected {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* 分区头 */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 2px 8px;
+}
+
+.section-head h2 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+}
+
+.section-head .count {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-mute);
+}
+
+/* ---------- 账号卡片（高密度 95px 双列微网格） ---------- */
+.acc {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--panel-card);
+  box-shadow: var(--card-shadow);
+  padding: 9px 12px 9px 13px;
+  margin-bottom: 8px;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.acc:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.acc.current {
+  border-color: var(--active-card-border);
+  background: var(--active-card-bg);
+  box-shadow: var(--active-glow);
+}
+
+/* 卡片顶部行：头像、名称、标签、切换触点 */
+.acc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.acc-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+}
+
+.acc-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--notch, var(--brand));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.acc-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.acc-name:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid var(--border);
+  background: var(--quota-bg);
+  color: var(--ink-dim);
+  flex-shrink: 0;
+}
+
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5px 5.5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.tier-badge.tier-pro {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+}
+
+.tier-badge.tier-ultra {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.15);
+}
+
+.tier-badge.tier-one {
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.28);
+}
+
+.tier-badge.tier-std {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.tier-badge.tier-free {
+  background: var(--quota-bg);
+  color: var(--ink-mute);
+  border: 1px solid var(--border);
+}
+
+.tier-badge.tier-plan {
+  background: var(--brand-bg);
+  color: var(--brand);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+
+/* 切换与当前活跃状态 */
+.acc-status-box {
+  flex-shrink: 0;
+}
+
+.badge-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--mint-bg);
+  color: var(--mint);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-active i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 6px var(--mint-glow);
+}
+
+.btn-switch {
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: var(--brand-bg);
+  color: var(--brand);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.btn-switch:hover {
+  background: var(--brand);
+  color: #ffffff;
+  border-color: var(--brand);
+}
+
+/* 卡片次行：邮箱/同步时间 + 快捷管理图标组 */
+.acc-subline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+
+.acc-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 11px;
+  flex: 1;
+}
+
+.acc-ghost-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.65;
+  transition: opacity .15s ease;
+  margin-left: 6px;
+}
+
+.acc:hover .acc-ghost-actions {
+  opacity: 1;
+}
+
+.btn-ghost {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-dim);
+  border-radius: 4px;
+}
+
+.btn-ghost:hover {
+  background: var(--border);
+  color: var(--ink);
+}
+
+.btn-ghost.danger:hover {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.btn-ghost svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---------- 左右双列 2x2 额度微网格 ---------- */
+.quota-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 7px;
+  margin-top: 7px;
+  background: var(--quota-bg);
+  border: 1px solid var(--quota-border);
+  border-radius: 7px;
+  padding: 6px 8px;
+}
+
+.qcol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qtitle {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 1px;
+}
+
+.qrow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qinfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-family: var(--mono);
+}
+
+.qname-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-dim);
+}
+
+.qreset {
+  color: var(--ink-mute);
+  font-size: 9.5px;
+}
+
+.qpct {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.qpct.mid { color: var(--amber); }
+.qpct.low { color: var(--red); }
+
+.qbar {
+  height: 4.5px;
+  background: var(--quota-track);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.qfill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--mint);
+  transition: width .4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qfill.mid { background: var(--amber); }
+.qfill.low { background: var(--red); }
+
+.q-empty, .q-error {
+  font-size: 11px;
+  color: var(--ink-mute);
+  padding: 4px 6px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.q-error {
+  color: var(--red);
+  background: var(--red-bg);
+  border-radius: 6px;
+}
+
+/* 空状态 */
+.empty {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 32px 18px;
+  text-align: center;
+  color: var(--ink-mute);
+  background: var(--panel);
+  font-size: 12.5px;
+}
+
+.empty b { color: var(--ink); }
+
+/* ---------- 现代化弹窗（毛玻璃与平滑动效） ---------- */
+dialog {
+  background: var(--modal-bg);
+  color: var(--ink);
+  border: 1px solid var(--modal-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  padding: 16px 18px;
+  width: min(390px, 94vw);
+  margin: auto;
+  outline: none;
+  animation: modal-pop .2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+dialog::backdrop {
+  background: var(--modal-backdrop);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@keyframes modal-pop {
+  0% { opacity: 0; transform: scale(0.96) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.dlg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.dlg-head h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dlg-close-x {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-mute);
+  border-radius: 6px;
+}
+
+.dlg-close-x:hover {
+  background: var(--border);
+  color: var(--ink);
+}
+
+/* 设置分组与滑动开关 */
+.settings-group {
+  margin-bottom: 14px;
+}
+
+.group-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  background: var(--quota-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9px;
+  margin-bottom: 6px;
+}
+
+.item-text {
+  min-width: 0;
+}
+
+.item-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.item-desc {
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: 1px;
+}
+
+/* iOS 风格平滑滑动开关 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 21px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--switch-track);
+  border-radius: 999px;
+  transition: background-color .2s ease;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 15px;
+  width: 15px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--switch-thumb);
+  border-radius: 50%;
+  transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.switch input:checked + .slider {
+  background-color: var(--switch-checked);
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(17px);
+}
+
+/* 分段选择器（Segmented Control） */
+.seg-control {
+  display: flex;
+  background: var(--quota-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.seg-control button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 5px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-dim);
+  border-radius: 6px;
+}
+
+.seg-control button.on {
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.about-card {
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--quota-bg);
+  border: 1px solid var(--border-subtle);
+  margin-top: 12px;
+}
+
+.about-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-dim);
+}
+
+.about-note {
+  font-size: 10.5px;
+  color: var(--ink-mute);
+  margin-top: 2px;
+}
+
+/* 输入框通用 */
+dialog label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  margin: 10px 0 4px;
+}
+
+dialog input:not([type="checkbox"]), dialog textarea {
+  width: 100%;
+  background: var(--quota-bg);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  outline: none;
+  transition: border-color .15s;
+}
+
+dialog textarea {
+  height: 120px;
+  resize: vertical;
+}
+
+dialog input:focus, dialog textarea:focus {
+  border-color: var(--brand);
+}
+
+.dlg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+dialog .hint {
+  font-size: 11px;
+  color: var(--ink-mute);
+  margin-top: 6px;
+}
+
+/* Toast 提示浮条 */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: all .22s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+  max-width: 90vw;
+  white-space: nowrap;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#toast.err {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--red);
+}
+
+#toast.ok {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--mint);
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header-wrap">
+    <div class="topbar">
+      <div class="brand">
+        <img src="data:image/png;base64,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" class="brand-img" alt="AGY Logo">
+        <span>AGY·SWITCH</span>
+        <span class="ver">v1.0.0</span>
+      </div>
+      <div class="top-right">
+        <div class="live-pill" id="ideDot"><i></i><span>检测中…</span></div>
+        <button class="btn-icon" id="btnSettings" data-i18n-title="settings" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 紧凑单行工具栏 -->
+    <div class="toolbar">
+      <button class="btn-primary" id="btnOauth" data-i18n="oauth">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m21 2-2 2m-1.5 1.5L14 9l-2-2-4 4-2-2-4 4 4 4 2-2 4 4 2-2 1.5-1.5M19 5l2 2"/></svg>
+        <span data-i18n="oauthText">OAuth 登录</span>
+      </button>
+      <button class="btn-secondary" id="btnAdd" data-i18n="add">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5v14"/></svg>
+        <span data-i18n="addText">添加当前</span>
+      </button>
+      <button class="btn-icon" id="btnRefreshAll" data-i18n-title="refreshAll" title="刷新全部额度">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+      </button>
+      <button class="btn-icon" id="btnToggleIde" data-i18n-title="startIde" title="启动 Antigravity">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+      </button>
+      <button class="btn-icon" id="btnRestart" data-i18n-title="restart" title="重启 Antigravity">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      </button>
+      <button class="btn-icon" id="btnImport" data-i18n-title="import" title="导入凭据">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2><span data-i18n="accountsTitle">账号库</span></h2>
+    <span class="count" id="accCount">0</span>
+  </div>
+  <div id="list"></div>
+</div>
+
+<!-- 弹窗：添加当前登录 -->
+<dialog id="dlgAdd">
+  <div class="dlg-head">
+    <h3 data-i18n="dlgAddTitle">添加当前登录到账号库</h3>
+    <button class="dlg-close-x" onclick="dlgAdd.close()">✕</button>
+  </div>
+  <label data-i18n="labelName">备注名</label>
+  <input id="addLabel" data-i18n-ph="labelPh" placeholder="例如：大号 / 体验号">
+  <div class="hint" data-i18n="dlgAddHint">将把当前 Antigravity 登录凭据快照保存到本地账号库。</div>
+  <div class="dlg-actions">
+    <button onclick="dlgAdd.close()" data-i18n="cancel">取消</button>
+    <button class="btn-primary" id="addOk" data-i18n="save">保存</button>
+  </div>
+</dialog>
+
+<!-- 弹窗：导入凭据 -->
+<dialog id="dlgImport">
+  <div class="dlg-head">
+    <h3 data-i18n="dlgImportTitle">导入凭据</h3>
+    <button class="dlg-close-x" onclick="dlgImport.close()">✕</button>
+  </div>
+  <label data-i18n="labelOpt">备注名（可选）</label>
+  <input id="impLabel" placeholder="例如：小号">
+  <label data-i18n="credsLabel">oauth_creds.json 内容（需含 refresh_token）</label>
+  <textarea id="impText" placeholder='{"access_token": "ya29…", "refresh_token": "1//…", …}'></textarea>
+  <div class="dlg-actions">
+    <button onclick="dlgImport.close()" data-i18n="cancel">取消</button>
+    <button class="btn-primary" id="impOk" data-i18n="importBtn">导入</button>
+  </div>
+</dialog>
+
+<!-- 弹窗：设置 -->
+<dialog id="dlgSettings">
+  <div class="dlg-head">
+    <h3 data-i18n="setTitle">偏好设置</h3>
+    <button class="dlg-close-x" onclick="dlgSettings.close()">✕</button>
+  </div>
+
+  <div class="settings-group">
+    <div class="group-title" data-i18n="langLabel">语言 / LANGUAGE</div>
+    <div class="seg-control">
+      <button id="langZh">简体中文</button>
+      <button id="langEn">English</button>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="group-title" data-i18n="themeGroup">外观主题</div>
+    <div class="seg-control">
+      <button id="thLight" data-i18n="light">☀️ 浅色</button>
+      <button id="thDark" data-i18n="dark">🌙 深色</button>
+      <button id="thSystem" data-i18n="system">💻 跟随系统</button>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="group-title" data-i18n="idePathGroup">Antigravity 程序路径</div>
+    <div class="path-box">
+      <input type="text" id="optIdePath" data-i18n-ph="idePathPh" placeholder="自定义 Antigravity.exe 路径…">
+      <button type="button" class="btn-secondary" id="btnBrowseIde" data-i18n="browseBtn">浏览…</button>
+    </div>
+    <div class="path-info">
+      <span id="idePathHint" data-i18n="idePathDesc">未指定时自动探测默认安装路径</span>
+      <span id="idePathDetected"></span>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="group-title" data-i18n="autoGroup">自动化与运行</div>
+    <div class="settings-item">
+      <div class="item-text">
+        <div class="item-label" data-i18n="autoRestart">切换后自动重启</div>
+        <div class="item-desc" data-i18n="autoRestartDesc">写入新账号后自动静默重启 IDE 生效</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="autoRestart">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-item">
+      <div class="item-text">
+        <div class="item-label" data-i18n="quotaRefreshLabel">自动刷新当前账号额度</div>
+        <div class="item-desc" data-i18n="quotaRefreshDesc">后台定时同步当前使用中账号的额度；关闭则仅手动刷新</div>
+      </div>
+      <div class="seg-control" style="flex-shrink:0">
+        <button id="qrOff" data-i18n="qrOff">关</button>
+        <button id="qr1" data-i18n="qr1">1分</button>
+        <button id="qr5" data-i18n="qr5">5分</button>
+        <button id="qr15" data-i18n="qr15">15分</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-group">
+    <div class="group-title" data-i18n="trayGroup">系统与托盘</div>
+    <div class="settings-item">
+      <div class="item-text">
+        <div class="item-label" data-i18n="autostart">开机自启动</div>
+        <div class="item-desc" data-i18n="autostartDesc">随系统启动并后台驻留托盘</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="optAutostart">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-item">
+      <div class="item-text">
+        <div class="item-label" data-i18n="closeTray">关闭窗口驻留托盘</div>
+        <div class="item-desc" data-i18n="closeTrayDesc">点击右上角关闭时最小化到托盘</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="optCloseTray">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="about-card">
+    <div class="about-title">AGY·SWITCH v1.0.0</div>
+    <div class="about-note" data-i18n="aboutLocal">数据仅存本地 ~/.agy-switch/，零遥测，保护隐私</div>
+  </div>
+
+  <div class="dlg-actions">
+    <button class="btn-primary" onclick="dlgSettings.close()" data-i18n="close" style="width:100%">完成</button>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = { data: null, autoRestart: localStorage.getItem("agy.autoRestart") === "1" };
+$("#autoRestart").checked = state.autoRestart;
+$("#autoRestart").onchange = e => {
+  state.autoRestart = e.target.checked;
+  localStorage.setItem("agy.autoRestart", e.target.checked ? "1" : "0");
+};
+
+// ============================ 多语言配置 ====================================
+const I18N = {
+  zh: {
+    oauth: "OAuth 登录", oauthText: "OAuth 登录", add: "添加当前", addText: "添加当前",
+    refreshAll: "刷新全部额度", import: "导入凭据", restart: "重启 Antigravity", settings: "设置",
+    accountsTitle: "账号库", inUse: "当前使用", current: "当前", switchBtn: "切换",
+    syncedAt: "同步于", notSynced: "未同步", reset: "重置", unknownEmail: "（邮箱未知）",
+    week: "周", fiveHour: "5h", quotaEmpty: "额度未同步 — 点击刷新获取",
+    noEmail: "（邮箱未知）",
+    renameTitle: "双击重命名", refreshTitle: "刷新此账号额度", exportTitle: "导出凭据", delTitle: "删除存档",
+    running: "运行中", notRunning: "未运行", checking: "检测中…",
+    emptyHtml: `账号库为空 — 点击 <b>「OAuth 登录」</b> 添加账号，<br>或 <b>「添加当前」</b> 保存 IDE 正在使用的账号。`,
+    dlgAddTitle: "添加当前登录到账号库", labelName: "备注名", labelPh: "例如：大号 / 体验号",
+    dlgAddHint: "将把当前 Antigravity 登录凭据快照保存到本地账号库。",
+    cancel: "取消", save: "保存", dlgImportTitle: "导入凭据", labelOpt: "备注名（可选）",
+    credsLabel: "oauth_creds.json 内容（需含 refresh_token）", importBtn: "导入",
+    setTitle: "偏好设置", themeGroup: "外观主题", light: "☀️ 浅色", dark: "🌙 深色", system: "💻 跟随系统",
+    autoGroup: "自动化与运行", autoRestart: "切换后自动重启", autoRestartDesc: "写入新账号后自动静默重启 IDE 生效",
+    trayGroup: "系统与托盘", autostart: "开机自启动", autostartDesc: "随系统启动并后台驻留托盘",
+    closeTray: "关闭窗口驻留托盘", closeTrayDesc: "点击右上角关闭时最小化到托盘",
+    quotaRefreshLabel: "自动刷新当前账号额度", quotaRefreshDesc: "后台定时同步当前使用中账号的额度；关闭则仅手动刷新",
+    qrOff: "关", qr1: "1分", qr5: "5分", qr15: "15分", savedToast: "设置已保存",
+    langLabel: "语言 / LANGUAGE", aboutLocal: "数据仅存本地 ~/.agy-switch/，零遥测，保护隐私", close: "完成",
+    confirmSwitch: n => `切换到「${n}」？\n\n当前登录会先被快照进账号库，不会丢失。`,
+    confirmDel: n => `删除存档「${n}」？\n（只删本地存档，不影响凭据文件）`,
+    promptRename: "修改账号备注名：",
+    switchOk: n => `已切换到 ${n}`, delOk: "已删除", addOk: "已保存当前登录", importOk: "导入成功",
+    quotaUpdated: "额度已更新", quotaFail: "刷新失败: ", allUpdated: "全部账号额度已更新",
+    exported: p => `已导出: ${p}`, exportedBrowser: "已导出（浏览器下载）",
+    loadFail: "加载失败: ", oauthOpened: "已打开 Google 授权页面，完成后账号会自动加入列表",
+    themeFail: "主题同步失败: ",
+    newAcc: "新账号已添加 ✓", autostartOn: "已开启开机自启", autostartOff: "已关闭开机自启",
+    trayOn: "关闭窗口将驻留托盘", trayOff: "关闭窗口即退出",
+    restartPrompt: "切换已写入，需要重启 Antigravity 才会生效。\n现在重启吗？",
+    archivesN: n => `${n} 个存档`,
+    tierPrefix: "套餐: ",
+    startIde: "启动 Antigravity", closeIde: "关闭 Antigravity",
+    startingIde: "正在启动 Antigravity…", stoppingIde: "正在关闭 Antigravity…",
+    ideStarted: "Antigravity 已启动", ideClosed: "Antigravity 已关闭",
+    startIdeFail: "启动失败", stopIdeFail: "关闭失败",
+    ideAlreadyRunning: "Antigravity 已经在运行中", ideNotRunning: "Antigravity 当前未在运行",
+    idePathGroup: "Antigravity 程序路径",
+    idePathPh: "未指定时自动探测（如：C:\\...\\Antigravity.exe）",
+    browseBtn: "浏览…",
+    idePathDesc: "未指定时自动探测默认安装路径",
+    idePathSaved: "程序路径已保存",
+    pathDetected: "已定位程序",
+    pathNotFound: "未定位到程序",
+  },
+  en: {
+    tierPrefix: "Plan: ",
+    oauth: "OAuth Login", oauthText: "OAuth Login", add: "Add Current", addText: "Add Current",
+    refreshAll: "Refresh All Quota", import: "Import Credentials", restart: "Restart Antigravity", settings: "Settings",
+    startIde: "Start Antigravity", closeIde: "Close Antigravity",
+    startingIde: "Starting Antigravity…", stoppingIde: "Closing Antigravity…",
+    ideStarted: "Antigravity started", ideClosed: "Antigravity closed",
+    startIdeFail: "Start failed", stopIdeFail: "Close failed",
+    ideAlreadyRunning: "Antigravity is already running", ideNotRunning: "Antigravity is not running",
+    idePathGroup: "Antigravity Executable Path",
+    idePathPh: "Auto-detected if blank (e.g. C:\\...\\Antigravity.exe)",
+    browseBtn: "Browse…",
+    idePathDesc: "Auto-detects default installation if blank",
+    idePathSaved: "Executable path saved",
+    pathDetected: "Executable found",
+    pathNotFound: "Executable not found",
+    accountsTitle: "Accounts", inUse: "Active", current: "Current", switchBtn: "Switch",
+    syncedAt: "synced", notSynced: "not synced", reset: "reset", unknownEmail: "(email unknown)",
+    week: "Wk", fiveHour: "5h", quotaEmpty: "Quota not synced — click to refresh",
+    noEmail: "(email unknown)",
+    renameTitle: "Double-click to rename", refreshTitle: "Refresh quota", exportTitle: "Export credentials", delTitle: "Delete archive",
+    running: "Running", notRunning: "Stopped", checking: "Checking…",
+    emptyHtml: `No accounts yet — click <b>"OAuth Login"</b> to add one,<br>or <b>"Add Current"</b> to save the IDE account.`,
+    dlgAddTitle: "Add current login to library", labelName: "Label", labelPh: "e.g. Main / Trial",
+    dlgAddHint: "Snapshots the current Antigravity login into the local library.",
+    cancel: "Cancel", save: "Save", dlgImportTitle: "Import credentials", labelOpt: "Label (optional)",
+    credsLabel: "oauth_creds.json content (needs refresh_token)", importBtn: "Import",
+    setTitle: "Settings", themeGroup: "Appearance", light: "☀️ Light", dark: "🌙 Dark", system: "💻 System",
+    autoGroup: "Automation", autoRestart: "Auto restart Antigravity", autoRestartDesc: "Silently restarts IDE after switching to apply credentials",
+    trayGroup: "System & Tray", autostart: "Launch at startup", autostartDesc: "Runs on system boot and stays in tray",
+    closeTray: "Close button keeps in tray", closeTrayDesc: "Hides to system tray when closing window",
+    quotaRefreshLabel: "Auto-refresh active account quota", quotaRefreshDesc: "Sync the active account's quota in the background; off = manual only",
+    qrOff: "Off", qr1: "1m", qr5: "5m", qr15: "15m", savedToast: "Settings saved",
+    langLabel: "Language / 语言", aboutLocal: "Local storage ~/.agy-switch/ only, no telemetry", close: "Done",
+    confirmSwitch: n => `Switch to "${n}"?\n\nThe current login will be snapshotted first.`,
+    confirmDel: n => `Delete archive "${n}"?\n(Only removes local archive, not credentials)`,
+    promptRename: "Label:",
+    switchOk: n => `Switched to ${n}`, delOk: "Deleted", addOk: "Current login saved", importOk: "Imported",
+    quotaUpdated: "Quota updated", quotaFail: "Refresh failed: ", allUpdated: "All quotas updated",
+    exported: p => `Exported: ${p}`, exportedBrowser: "Exported (browser download)",
+    loadFail: "Load failed: ", oauthOpened: "Google authorization page opened — account will appear when done",
+    themeFail: "Theme sync failed: ",
+    newAcc: "New account added ✓", autostartOn: "Autostart enabled", autostartOff: "Autostart disabled",
+    trayOn: "Close keeps in tray", trayOff: "Close exits app",
+    restartPrompt: "Switch written. Restart Antigravity to take effect.\nRestart now?",
+    archivesN: n => `${n} archive${n === 1 ? "" : "s"}`,
+  },
+};
+
+let LANG = localStorage.getItem("agy.lang") || "zh";
+const t = (k, ...a) => {
+  const v = (I18N[LANG] && I18N[LANG][k]) ?? I18N.zh[k] ?? k;
+  return typeof v === "function" ? v(...a) : v;
+};
+
+function refreshStaticTexts() {
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
+  document.documentElement.lang = LANG === "en" ? "en" : "zh-CN";
+}
+
+function applyLang(l) {
+  LANG = I18N[l] ? l : "zh";
+  localStorage.setItem("agy.lang", LANG);
+  api("/api/prefs", { lang: LANG }).catch(() => {});
+  refreshStaticTexts();
+  syncSettingsUI();
+  render();
+}
+
+// ============================ 主题控制 ====================================
+function getEffectiveTheme(th) {
+  if (th === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return th === "dark" ? "dark" : "light";
+}
+
+function applyTheme(th) {
+  localStorage.setItem("agy.theme", th);
+  const eff = getEffectiveTheme(th);
+  document.documentElement.dataset.theme = eff;
+  
+  // 桌面端同步原生窗口标题栏
+  const tauri = window.__TAURI__;
+  const win = tauri?.window?.getCurrentWindow?.();
+  if (win?.setTheme) win.setTheme(eff).catch(() => {});
+  api("/api/prefs", { theme: th }).catch(() => {});
+  syncSettingsUI();
+}
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
+  if ((localStorage.getItem("agy.theme") || "system") === "system") {
+    document.documentElement.dataset.theme = e.matches ? "dark" : "light";
+    const tauri = window.__TAURI__;
+    const win = tauri?.window?.getCurrentWindow?.();
+    if (win?.setTheme) win.setTheme(e.matches ? "dark" : "light").catch(() => {});
+  }
+});
+
+function syncSettingsUI() {
+  const saved = localStorage.getItem("agy.theme") || "system";
+  $("#thLight").classList.toggle("on", saved === "light");
+  $("#thDark").classList.toggle("on", saved === "dark");
+  $("#thSystem").classList.toggle("on", saved === "system");
+  $("#autoRestart").checked = state.autoRestart;
+  $("#langZh").classList.toggle("on", LANG === "zh");
+  $("#langEn").classList.toggle("on", LANG === "en");
+
+  const as = $("#optAutostart");
+  const tauri = window.__TAURI__;
+  if (as) {
+    if (tauri?.autostart) {
+      as.disabled = false;
+      tauri.autostart.isEnabled().then(v => { as.checked = !!v; }).catch(() => { as.checked = false; });
+    } else {
+      as.disabled = true;
+      as.checked = false;
+    }
+  }
+  const ct = $("#optCloseTray");
+  api("/api/prefs").then(p => {
+    if (ct) ct.checked = !!p.close_to_tray;
+    if ($("#optIdePath")) $("#optIdePath").value = p.ide_path || "";
+    const mins = p.quota_refresh_min === undefined ? 5 : (p.quota_refresh_min ?? 5);
+    [["qrOff", 0], ["qr1", 1], ["qr5", 5], ["qr15", 15]].forEach(([id, v]) => {
+      const el = $("#" + id);
+      if (el) el.classList.toggle("on", mins === v);
+    });
+  }).catch(() => { if (ct) ct.checked = false; });
+
+  const detected = state.data?.ide_path;
+  const detEl = $("#idePathDetected");
+  if (detEl) {
+    if (detected) {
+      detEl.textContent = "✓ " + t("pathDetected");
+      detEl.title = detected;
+      detEl.style.color = "var(--mint)";
+    } else {
+      detEl.textContent = "✗ " + t("pathNotFound");
+      detEl.title = "";
+      detEl.style.color = "var(--amber)";
+    }
+  }
+}
+
+applyLang(localStorage.getItem("agy.lang") || "zh");
+applyTheme(localStorage.getItem("agy.theme") || "system");
+
+$("#btnSettings").onclick = () => { syncSettingsUI(); dlgSettings.showModal(); };
+$("#thLight").onclick = () => applyTheme("light");
+$("#thDark").onclick = () => applyTheme("dark");
+$("#thSystem").onclick = () => applyTheme("system");
+$("#langZh").onclick = () => applyLang("zh");
+$("#langEn").onclick = () => applyLang("en");
+
+$("#optIdePath").onchange = async e => {
+  try {
+    const path = e.target.value.trim();
+    await api("/api/prefs", { ide_path: path });
+    toast(t("idePathSaved"), "ok");
+    await loadState();
+    syncSettingsUI();
+  } catch (err) { toast(err.message, "err"); }
+};
+
+$("#btnBrowseIde").onclick = async () => {
+  try {
+    const r = await api("/api/browse_ide", {});
+    if (r.ok && r.path) {
+      $("#optIdePath").value = r.path;
+      await api("/api/prefs", { ide_path: r.path });
+      toast(t("idePathSaved"), "ok");
+      await loadState();
+      syncSettingsUI();
+    }
+  } catch (err) { toast(err.message, "err"); }
+};
+
+$("#optAutostart").onchange = async e => {
+  const tauri = window.__TAURI__;
+  if (!tauri?.autostart) { e.target.checked = false; return; }
+  try {
+    if (e.target.checked) await tauri.autostart.enable(); else await tauri.autostart.disable();
+    toast(t(e.target.checked ? "autostartOn" : "autostartOff"), "ok");
+  } catch (err) { toast(err.message, "err"); }
+};
+
+$("#optCloseTray").onchange = async e => {
+  try {
+    await api("/api/prefs", { close_to_tray: e.target.checked });
+    toast(t(e.target.checked ? "trayOn" : "trayOff"), "ok");
+  } catch (err) { toast(err.message, "err"); }
+};
+
+[["qrOff", 0], ["qr1", 1], ["qr5", 5], ["qr15", 15]].forEach(([id, v]) => {
+  const el = $("#" + id);
+  if (el) el.onclick = async () => {
+    try {
+      await api("/api/prefs", { quota_refresh_min: v });
+      syncSettingsUI();
+      toast(t("savedToast"), "ok");
+    } catch (err) { toast(err.message, "err"); }
+  };
+});
+
+// ============================ Toast 提示 ===================================
+let toastTimer;
+function toast(msg, cls = "") {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.className = "show " + cls;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = "", 3000);
+}
+
+// ============================ 数据通信与工具 ================================
+async function api(path, body) {
+  const opt = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function fmtTime(iso) {
+  if (!iso) return "";
+  if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += "Z";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const p = n => String(n).padStart(2, "0");
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function fmtCompactReset(iso) {
+  if (!iso) return "";
+  if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += "Z";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const now = new Date();
+  const diffHours = (d - now) / (1000 * 60 * 60);
+  const p = n => String(n).padStart(2, "0");
+
+  const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  const tmr = new Date(now.getTime() + 86400000);
+  const isTmr = d.getDate() === tmr.getDate() && d.getMonth() === tmr.getMonth() && d.getFullYear() === tmr.getFullYear();
+
+  if (diffHours > 0 && diffHours < 1) {
+    const mins = Math.max(1, Math.round(diffHours * 60));
+    return LANG === "en" ? `${mins}m left` : `${mins}分后`;
+  }
+  if (isToday) {
+    return (LANG === "en" ? "Today " : "今 ") + `${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  if (isTmr) {
+    return (LANG === "en" ? "Tmr " : "明 ") + `${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+  return `${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+// ============================ 额度渲染（左右双列微网格） ========================
+function quotaHtml(q) {
+  if (q.error) return `<div class="q-error">⚠ ${esc(q.error)}</div>`;
+  if (!q.groups || !q.groups.length) return `<div class="q-empty">${esc(t("quotaEmpty"))}</div>`;
+
+  const wl = { week: t("week"), "5h": t("fiveHour") };
+  
+  return `<div class="quota-grid">` + q.groups.map((g, idx) => {
+    // 标题美化简化
+    let title = esc(g.name);
+    let icon = "✦";
+    if (/gemini/i.test(g.name)) {
+      title = "Gemini";
+      icon = "✦";
+    } else if (/claude|gpt/i.test(g.name)) {
+      title = "Claude / GPT";
+      icon = "⚡";
+    }
+
+    const rows = g.buckets.map(b => {
+      const cls = b.pct > 50 ? "" : b.pct > 20 ? "mid" : "low";
+      const wLabel = wl[b.window] || esc(b.window);
+      const compactReset = fmtCompactReset(b.reset);
+      const fullReset = fmtTime(b.reset);
+      const titleAttr = fullReset ? `title="${esc(t("reset"))}: ${esc(fullReset)}"` : "";
+
+      return `<div class="qrow" ${titleAttr}>
+        <div class="qinfo">
+          <div class="qname-wrap">
+            <span>${wLabel}</span>
+            ${compactReset ? `<span class="qreset">${compactReset}</span>` : ""}
+          </div>
+          <span class="qpct ${cls}">${b.pct}%</span>
+        </div>
+        <div class="qbar">
+          <div class="qfill ${cls}" style="width: ${Math.max(b.pct, 3)}%"></div>
+        </div>
+      </div>`;
+    }).join("");
+
+    return `<div class="qcol">
+      <div class="qtitle"><span>${icon}</span><span>${title}</span></div>
+      ${rows}
+    </div>`;
+  }).join("") + `</div>`;
+}
+
+function parseTier(a) {
+  const raw = (a.quota?.tier || a.plan_type || "").trim();
+  if (!raw) return null;
+  const lower = raw.toLowerCase();
+  if (lower.includes("ultra")) {
+    return { text: "ULTRA", cls: "tier-ultra", full: raw };
+  }
+  if (lower.includes("pro")) {
+    return { text: "PRO", cls: "tier-pro", full: raw };
+  }
+  if (lower.includes("one")) {
+    return { text: "ONE", cls: "tier-one", full: raw };
+  }
+  if (lower.includes("standard") || lower.includes("std")) {
+    return { text: "STD", cls: "tier-std", full: raw };
+  }
+  if (lower.includes("free")) {
+    return { text: "FREE", cls: "tier-free", full: raw };
+  }
+  const clean = raw.replace(/-tier/gi, "").replace(/google/gi, "").trim();
+  return { text: (clean || raw).toUpperCase().slice(0, 6), cls: "tier-plan", full: raw };
+}
+
+// ============================ 卡片渲染 =====================================
+function accCard(a) {
+  // 套餐/计划胶囊（优先读取 a.quota.tier，兼顾 a.plan_type）
+  const tierInfo = parseTier(a);
+  const planHtml = tierInfo
+    ? `<span class="tier-badge ${tierInfo.cls}" title="${esc(t("tierPrefix"))}${esc(tierInfo.full)}">${esc(tierInfo.text)}</span>`
+    : "";
+
+  // 快捷切换 vs 当前生效中
+  const statusHtml = a.current
+    ? `<div class="badge-active"><i class="pulse-dot"></i><span>${esc(t("inUse"))}</span></div>`
+    : `<button class="btn-switch" onclick="switchTo('${a.id}')">
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.3"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+        <span>${esc(t("switchBtn"))}</span>
+       </button>`;
+
+  const syncStr = a.quota.fetched_at ? `${t("syncedAt")} ${fmtTime(a.quota.fetched_at)}` : t("notSynced");
+  const avatarLetter = (a.label || a.email || "G").trim().charAt(0).toUpperCase();
+
+  return `<div class="acc ${a.current ? "current" : ""}" style="--notch:${a.notch || "#3b82f6"}">
+    <div class="acc-top">
+      <div class="acc-title-wrap">
+        <div class="acc-avatar">${esc(avatarLetter)}</div>
+        <span class="acc-name" data-id="${a.id}" data-label="${esc(a.label || "")}" title="${esc(t("renameTitle"))}">${esc(a.label || a.email || t("noEmail"))}</span>
+        ${planHtml}
+      </div>
+      <div class="acc-status-box">
+        ${statusHtml}
+      </div>
+    </div>
+
+    <div class="acc-subline">
+      <div class="acc-meta">${esc(a.email || t("noEmail"))} · ${esc(syncStr)}</div>
+      <div class="acc-ghost-actions">
+        <button class="btn-ghost" onclick="refreshOne('${a.id}')" title="${esc(t("refreshTitle"))}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        </button>
+        <button class="btn-ghost" onclick="rename('${a.id}')" title="${esc(t("renameTitle"))}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        </button>
+        <button class="btn-ghost" onclick="exportOne('${a.id}')" title="${esc(t("exportTitle"))}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+        </button>
+        <button class="btn-ghost danger" onclick="del('${a.id}')" title="${esc(t("delTitle"))}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    ${quotaHtml(a.quota)}
+  </div>`;
+}
+
+function render() {
+  const d = state.data;
+  if (!d) return;
+  const dot = $("#ideDot");
+  dot.className = "live-pill " + (d.ide_running ? "on" : "off");
+  dot.querySelector("span").textContent = d.ide_running ? t("running") : t("notRunning");
+
+  const btnToggle = $("#btnToggleIde");
+  if (btnToggle) {
+    const isRunning = !!d.ide_running;
+    btnToggle.className = "btn-icon " + (isRunning ? "running" : "stopped");
+    btnToggle.title = isRunning ? t("closeIde") : t("startIde");
+    btnToggle.innerHTML = isRunning
+      ? `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2.5"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>`;
+  }
+
+  const list = d.accounts || [];
+  $("#accCount").textContent = t("archivesN", list.length);
+  $("#list").innerHTML = list.length
+    ? list.map(accCard).join("")
+    : `<div class="empty">${t("emptyHtml")}</div>`;
+}
+
+async function loadState() {
+  try {
+    state.data = await api("/api/state");
+    render();
+  } catch (e) {
+    toast(t("loadFail") + e.message, "err");
+  }
+}
+
+async function refreshOne(id) {
+  try {
+    const acc = await api("/api/quota?id=" + id);
+    const i = state.data.accounts.findIndex(a => a.id === id);
+    if (i >= 0) state.data.accounts[i] = acc;
+    render();
+    toast(acc.quota.error ? t("quotaFail") + acc.quota.error : t("quotaUpdated"), acc.quota.error ? "err" : "ok");
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function exportOne(id) {
+  const a = (state.data?.accounts || []).find(x => x.id === id);
+  const safe = (a?.email || a?.label || "account").replace(/[^\w.@-]+/g, "_");
+  const tauri = window.__TAURI__;
+  try {
+    if (tauri?.dialog?.save) {
+      const path = await tauri.dialog.save({ defaultPath: safe + ".json", filters: [{ name: "JSON", extensions: ["json"] }] });
+      if (!path) return;
+      const r = await api("/api/export", { id, path });
+      toast(t("exported", r.path), "ok");
+    } else {
+      const r = await api("/api/export", { id });
+      const blob = new Blob([r.content], { type: "application/json" });
+      const u = URL.createObjectURL(blob);
+      const el = document.createElement("a");
+      el.href = u; el.download = safe + ".json"; el.click();
+      URL.revokeObjectURL(u);
+      toast(t("exportedBrowser"), "ok");
+    }
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function refreshAll() {
+  $("#btnRefreshAll").disabled = true;
+  try {
+    state.data = await api("/api/refresh_all", {});
+    render();
+    toast(t("allUpdated"), "ok");
+  } catch (e) { toast(e.message, "err"); }
+  $("#btnRefreshAll").disabled = false;
+}
+
+async function switchTo(id) {
+  const acc = state.data.accounts.find(a => a.id === id);
+  if (!confirm(t("confirmSwitch", acc?.label || acc?.email || id))) return;
+  try {
+    const r = await api("/api/switch", { id });
+    toast(t("switchOk", acc.email || acc.label), "ok");
+    await loadState();
+    if (r.restart_needed) {
+      if (state.autoRestart) return doRestart();
+      setTimeout(() => { if (confirm(t("restartPrompt"))) doRestart(); }, 300);
+    }
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function del(id) {
+  const acc = state.data.accounts.find(a => a.id === id);
+  if (!confirm(t("confirmDel", acc?.label || id))) return;
+  try {
+    await api("/api/delete", { id });
+    await loadState();
+    toast(t("delOk"), "ok");
+  } catch (e) { toast(e.message, "err"); }
+}
+
+async function rename(id, cur) {
+  cur = cur ?? (state.data?.accounts.find(a => a.id === id)?.label ?? "");
+  const label = prompt(t("promptRename"), cur || "");
+  if (!label || label === cur) return;
+  try {
+    await api("/api/rename", { id, label });
+    await loadState();
+  } catch (e) { toast(e.message, "err"); }
+}
+
+$("#list").addEventListener("dblclick", e => {
+  const name = e.target.closest(".acc-name");
+  if (name) rename(name.dataset.id, name.dataset.label);
+});
+
+async function doToggleIde() {
+  const isRunning = !!state.data?.ide_running;
+  if (isRunning) {
+    await doStopIde();
+  } else {
+    await doStartIde();
+  }
+}
+
+async function doStartIde() {
+  const btn = $("#btnToggleIde");
+  if (btn) btn.disabled = true;
+  toast(t("startingIde"), "");
+  try {
+    const r = await api("/api/start_ide", {});
+    toast(r.message || (r.ok ? t("ideStarted") : t("startIdeFail")), r.ok ? "ok" : "err");
+    setTimeout(loadState, 2000);
+  } catch (e) { toast(e.message, "err"); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+async function doStopIde() {
+  const btn = $("#btnToggleIde");
+  if (btn) btn.disabled = true;
+  toast(t("stoppingIde"), "");
+  try {
+    const r = await api("/api/stop_ide", {});
+    toast(r.message || (r.ok ? t("ideClosed") : t("stopIdeFail")), r.ok ? "ok" : "err");
+    setTimeout(loadState, 1500);
+  } catch (e) { toast(e.message, "err"); }
+  finally { if (btn) btn.disabled = false; }
+}
+
+async function doRestart() {
+  $("#btnRestart").disabled = true;
+  try {
+    const r = await api("/api/restart_ide", {});
+    toast(r.message || (r.ok ? "已重启" : "重启失败"), r.ok ? "ok" : "err");
+    setTimeout(loadState, 4000);
+  } catch (e) { toast(e.message, "err"); }
+  $("#btnRestart").disabled = false;
+}
+
+$("#btnAdd").onclick = () => {
+  const cur = state.data?.live_email || "";
+  $("#addLabel").value = "";
+  $("#addLabel").placeholder = cur ? (LANG === "en" ? `default: ${cur}` : `默认使用 ${cur}`) : t("labelPh");
+  $("#dlgAdd").showModal();
+};
+
+$("#addOk").onclick = async () => {
+  try {
+    await api("/api/add", { label: $("#addLabel").value });
+    $("#dlgAdd").close();
+    await loadState();
+    toast(t("addOk"), "ok");
+  } catch (e) { toast(e.message, "err"); }
+};
+
+$("#btnImport").onclick = () => {
+  $("#impLabel").value = "";
+  $("#impText").value = "";
+  $("#dlgImport").showModal();
+};
+
+$("#impOk").onclick = async () => {
+  try {
+    await api("/api/import", { label: $("#impLabel").value, creds: $("#impText").value });
+    $("#dlgImport").close();
+    await loadState();
+    toast(t("importOk"), "ok");
+  } catch (e) { toast(e.message, "err"); }
+};
+
+$("#btnOauth").onclick = async () => {
+  try {
+    const r = await api("/api/oauth_start", {});
+    const openExternal = u => {
+      const tauri = window.__TAURI__;
+      if (tauri?.opener?.openUrl) tauri.opener.openUrl(u);
+      else window.open(u, "_blank", "width=560,height=760");
+    };
+    openExternal(r.auth_url);
+    toast(t("oauthOpened"), "ok");
+
+    const before = (state.data?.accounts || []).length;
+    let ticks = 0;
+    const poll = setInterval(async () => {
+      ticks++;
+      try {
+        const d = await api("/api/state");
+        state.data = d;
+        render();
+        if (d.accounts.length > before || ticks > 90) {
+          clearInterval(poll);
+          if (d.accounts.length > before) toast(t("newAcc"), "ok");
+        }
+      } catch (e) { }
+    }, 2000);
+  } catch (e) { toast(e.message, "err"); }
+};
+
+$("#btnRefreshAll").onclick = refreshAll;
+$("#btnToggleIde").onclick = doToggleIde;
+$("#btnRestart").onclick = doRestart;
+
+loadState();
+setInterval(loadState, 30000);
+</script>
+</body>
+</html>
