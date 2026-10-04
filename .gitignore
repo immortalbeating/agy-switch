@@ -49,7 +49,7 @@ __pycache__/
 *.zip
 *.7z
 
-# Local design references and screenshots
+# Local screenshots and UI debug files
 /.ref/
 
 # Editor and operating-system files

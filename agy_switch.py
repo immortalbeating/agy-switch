@@ -49,7 +49,7 @@ IDE_EXE_CANDIDATES = [
 ]
 
 # ---- Antigravity 后端 API ------------------------------------------------
-# Antigravity-Manager 同款的 daily -> sandbox -> prod 回退链
+# 额度 API 按 daily -> sandbox -> prod 顺序回退
 _API_HOSTS = [
     "https://daily-cloudcode-pa.googleapis.com",
     "https://daily-cloudcode-pa.sandbox.googleapis.com",
@@ -58,8 +58,8 @@ _API_HOSTS = [
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
-# Antigravity 授权端点校验 token 的签发 client，额度查询必须用 Antigravity client
-# （与 Antigravity-Manager 一致）签发的凭据；gemini-cli client 的凭据仅可用于切换。
+# 额度端点校验 token 的签发 client，查询额度需要 Antigravity 客户端签发的凭据。
+# gemini-cli 客户端签发的凭据仅可用于账号切换。
 _OAUTH_CLIENT_ENV = {
     "antigravity": ("AGY_ANTIGRAVITY_CLIENT_ID", "AGY_ANTIGRAVITY_CLIENT_SECRET"),
     "gemini-cli": ("AGY_GEMINI_CLIENT_ID", "AGY_GEMINI_CLIENT_SECRET"),
@@ -309,7 +309,7 @@ def fetch_email(token):
 # ============================ 额度监控 =====================================
 
 def _fuse_bucket(buckets, want_3p):
-    """按 Antigravity-Manager 的规则：取 5 小时与每周窗口中更受限的那个。"""
+    """取 5 小时与每周窗口中更受限的那个。"""
     h = w = None
     for b in buckets:
         text = f"{b.get('bucketId', '')} {b.get('window', '')} {b.get('displayName', '')}".lower()

@@ -1,6 +1,6 @@
 # AGY·SWITCH
 
-Antigravity 账号切换 + 额度监控的桌面工具。**Tauri 2 封装**（与 [zcode-switch](https://github.com/pjpv/zcode-switch) 同框架的原生窗口应用），账号管理思路参考 [Antigravity-Manager](https://github.com/lbjlaq/Antigravity-Manager)。前端为单文件 HTML，后端 Rust，嵌入本地服务承载 API。
+Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML，后端 Rust，嵌入本地服务承载 API。
 
 ## 使用
 
@@ -27,7 +27,7 @@ Antigravity 账号切换 + 额度监控的桌面工具。**Tauri 2 封装**（�
 
 ### 额度自动刷新
 
-后台线程按设定间隔（默认 5 分钟，对齐 Antigravity-Manager 的调度周期）**只自动刷新当前使用中的账号**；非活跃账号保持手动。启动时立即同步一次。附带收益：刷新走 token 续期链路，当前账号的 access_token 保持新鲜并同步回凭据管理器，IDE 长时间挂机也不会拿到过期 token。频率参考：Antigravity-Manager 调度器为固定 300 秒遍历全部账号；zcode-switch 无自动刷新（纯按需）。
+后台线程按设定间隔（默认 5 分钟）**只自动刷新当前使用中的账号**；非活跃账号保持手动。启动时立即同步一次。刷新时会续期 token，并同步回凭据管理器。
 
 ### 托盘
 
@@ -83,5 +83,5 @@ cargo build --release
 - `agy_switch.py` + `start.bat` 是早期网页版（本地服务 + 浏览器），仍可用作无 WebView2 环境的备选，主开发以 Tauri 版为准
 - 凭据与账号库是明文 JSON（与 IDE 自身的存储方式一致），请勿把 `~/.agy-switch/` 提交到仓库或分享给他人
 - 本地构建的 exe 未签名，首次运行可能触发 SmartScreen 提示（"更多信息 → 仍要运行"）
-- 公开仓库不包含账号库、OAuth 凭据、个人偏好、日志、参考截图或预编译程序；`.gitignore` 已排除这些文件及构建缓存
+- 公开仓库不包含账号库、OAuth 凭据、个人偏好、日志、本机截图或预编译程序；`.gitignore` 已排除这些文件及构建缓存
 - 公开源码仅提供空字段的 OAuth 配置模板；实际客户端参数、用户 access_token、refresh_token 和账号登录信息都留在本机
