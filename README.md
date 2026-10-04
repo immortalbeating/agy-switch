@@ -4,7 +4,12 @@ Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML
 
 ## 使用
 
-此仓库提供源码。先在 `src-tauri/` 下执行 `cargo build --release`，再双击生成的 `target/release/agy-switch.exe`；也可以将它复制到项目根目录使用。
+Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy-switch/releases/latest) 下载：
+
+- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.0.0/agy-switch-1.0.0-windows-x64-setup.exe)：运行安装程序，按向导完成安装
+- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.0.0/agy-switch-1.0.0-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
+
+首次使用可以通过「添加当前登录」收录 IDE 已有账号。浏览器 OAuth 登录和令牌续期需要本机私有客户端配置，详见下方配置说明；发布包不提供实际客户端参数。两种版本的账号库和偏好均保存在用户目录 `~/.agy-switch/`。
 
 - 原生窗口打开（WebView2，Win11 自带运行时），进程内嵌 `127.0.0.1` 本地服务，无浏览器
 - 首次运行自动把当前 IDE 登录快照进账号库
@@ -70,13 +75,23 @@ Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML
 
 ## 构建
 
+构建单个程序：
+
 ```bat
 cd src-tauri
 cargo build --release
 :: 产物 target/release/agy-switch.exe（复制到根目录即可）
 ```
 
-无需 Node/npm：前端是静态单文件，`tauri.conf.json` 的窗口 URL 指向进程内嵌服务。
+构建 Windows NSIS 安装包需要 Tauri CLI：
+
+```bat
+cargo install tauri-cli --version "^2.0.0" --locked
+cargo tauri build --bundles nsis
+:: 安装包位于 src-tauri/target/release/bundle/nsis/
+```
+
+无需 Node/npm：前端是静态单文件，`tauri.conf.json` 的窗口 URL 指向进程内嵌服务。发布包还会移除本机用户名路径，并排除私有配置和构建调试文件。
 
 ## 其他
 
