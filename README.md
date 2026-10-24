@@ -6,10 +6,10 @@ Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML
 
 Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy-switch/releases/latest) 下载：
 
-- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.0/agy-switch-1.1.0-windows-x64-setup.exe)：运行安装程序，按向导完成安装
-- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.0/agy-switch-1.1.0-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
+- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.1/agy-switch-1.1.1-windows-x64-setup.exe)：运行安装程序，按向导完成安装
+- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.1/agy-switch-1.1.1-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
 
-当前源码版本为 **1.1.0**，变更见 [更新日志](CHANGELOG.md)。
+当前源码版本为 **1.1.1**，变更见 [更新日志](CHANGELOG.md)。
 
 首次使用可以通过「添加当前登录」收录 IDE 已有账号。浏览器 OAuth 登录和令牌续期需要本机私有客户端配置，详见下方配置说明；发布包不提供实际客户端参数。两种版本的账号库和偏好均保存在用户目录 `~/.agy-switch/`。
 
@@ -18,6 +18,7 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
 - 本地服务优先尝试 8791-8800；整段被占用或被 Windows 保留时，自动改用系统分配的空闲端口，无需调整系统端口配置
 - 桌面版通过用户目录中的进程锁和实际服务地址识别已有实例，端口变化后再次双击仍会唤醒原窗口；本地实例通信直接访问回环地址，不经过代理
 - **浅色为默认主题**，工具条右侧 🌙/☀️ 可切换深色，选择保存在本地
+- 深色主题使用橙金边框标记当前账号，普通账号使用清晰的灰色边框；浅色主题保留绿色选中边框
 
 | 操作 | 说明 |
 | --- | --- |

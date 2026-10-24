@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 HOME = Path.home()
 GEMINI_DIR = HOME / ".gemini"
 LIVE_CREDS = GEMINI_DIR / "oauth_creds.json"

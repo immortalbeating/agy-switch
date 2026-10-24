@@ -1,6 +1,6 @@
 [package]
 name = "agy-switch"
-version = "1.1.0"
+version = "1.1.1"
 description = "AGY·SWITCH — Antigravity 账号切换与额度监控"
 edition = "2021"
 rust-version = "1.89"
