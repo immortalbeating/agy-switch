@@ -31,6 +31,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+APP_VERSION = "1.1.0"
 HOME = Path.home()
 GEMINI_DIR = HOME / ".gemini"
 LIVE_CREDS = GEMINI_DIR / "oauth_creds.json"
@@ -119,7 +120,8 @@ def _login_client():
         raise RuntimeError(_OAUTH_CONFIG_ERROR)
     return LOGIN_CLIENT
 LOGIN_SCOPES = "openid https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/cclog https://www.googleapis.com/auth/experimentsandconfigs"
-UA = "vscode/1.99.0 (Antigravity/4.3.0)"
+# The legacy IDE identity makes Cloud Code omit entitled Argon quota groups.
+UA = "antigravity/cli/1.4.7 (aidev_client; os_type=windows; arch=amd64; auth_method=consumer)"
 TOKEN_REFRESH_SKEW = 900  # 提前 15 分钟视为过期
 
 KEEP_PREFIXES = ("gemini", "claude", "gpt", "image", "imagen")
@@ -432,7 +434,7 @@ def refresh_quota(acc):
 class OAuthCallback(BaseHTTPRequestHandler):
     """一次性回调服务器：接住 Google 重定向，换 token、入账、刷新额度后自毁。"""
 
-    server_version = "AGYSwitch/1.0"
+    server_version = f"AGYSwitch/{APP_VERSION}"
 
     def log_message(self, fmt, *args):
         pass
@@ -505,24 +507,35 @@ class OAuthCallback(BaseHTTPRequestHandler):
 _oauth_cb = {"state": None, "redirect_uri": None, "server": None, "timer": None}
 
 
+def _bind_http_server(handler, ports):
+    """Try preferred ports then retain the successfully bound server socket."""
+    for port in ports:
+        try:
+            return ThreadingHTTPServer(("127.0.0.1", port), handler)
+        except OSError:
+            continue
+    # Port 0 lets Windows choose a port outside occupied or excluded ranges.
+    # Do not probe and rebind: this server owns the selected socket throughout.
+    return ThreadingHTTPServer(("127.0.0.1", 0), handler)
+
+
+def _create_app_server(port=None):
+    if port is not None:
+        # An explicit --port remains exact, including explicit port 0.
+        return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    return _bind_http_server(Handler, range(8791, 8801))
+
+
 def oauth_start():
-    """生成授权链接，启动回调服务器。返回 (auth_url, redirect_uri)。"""
+    """生成授权链接并启动持有实际回调端口的服务器。"""
     client = _login_client()
     if _oauth_cb.get("server"):
         try:
             _oauth_cb["server"].shutdown()
         except Exception:
             pass
-    port = None
-    for p in range(8792, 8802):
-        try:
-            srv = ThreadingHTTPServer(("127.0.0.1", p), OAuthCallback)
-            port = p
-            break
-        except OSError:
-            continue
-    if port is None:
-        raise RuntimeError("8792-8801 端口均被占用，无法启动 OAuth 回调服务")
+    srv = _bind_http_server(OAuthCallback, range(8792, 8802))
+    port = srv.server_address[1]
     state = uuid.uuid4().hex
     redirect_uri = f"http://localhost:{port}/callback"
     qs = urllib.parse.urlencode({
@@ -629,7 +642,7 @@ def account_view(acc, current_id):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "AGYSwitch/1.0"
+    server_version = f"AGYSwitch/{APP_VERSION}"
 
     def log_message(self, fmt, *args):
         pass  # 精简：不刷屏
@@ -795,15 +808,16 @@ def bootstrap_first_account():
 
 def main():
     ap = argparse.ArgumentParser(description="AGY·SWITCH — Antigravity 账号切换与额度监控")
-    ap.add_argument("--port", type=int, default=8791)
+    ap.add_argument("--port", type=int, default=None,
+                    help="指定精确端口（0 为系统分配）；默认尝试 8791-8800 后由系统分配")
     ap.add_argument("--no-browser", action="store_true")
     args = ap.parse_args()
 
     STORE_DIR.mkdir(parents=True, exist_ok=True)
     bootstrap_first_account()
 
-    httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    url = f"http://127.0.0.1:{args.port}"
+    httpd = _create_app_server(args.port)
+    url = f"http://127.0.0.1:{httpd.server_address[1]}"
     print(f"[agy] AGY·SWITCH 已启动: {url}  (Ctrl+C 退出)")
     print(f"[agy] 凭据: {LIVE_CREDS}")
     print(f"[agy] 账号库: {STORE_FILE}")
@@ -813,6 +827,8 @@ def main():
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\n[agy] 已退出")
+    finally:
+        httpd.server_close()
 
 
 if __name__ == "__main__":

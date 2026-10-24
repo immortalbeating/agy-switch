@@ -6,22 +6,25 @@ Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML
 
 Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy-switch/releases/latest) 下载：
 
-- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.0.0/agy-switch-1.0.0-windows-x64-setup.exe)：运行安装程序，按向导完成安装
-- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.0.0/agy-switch-1.0.0-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
+- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.0/agy-switch-1.1.0-windows-x64-setup.exe)：运行安装程序，按向导完成安装
+- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.0/agy-switch-1.1.0-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
+
+当前源码版本为 **1.1.0**，变更见 [更新日志](CHANGELOG.md)。
 
 首次使用可以通过「添加当前登录」收录 IDE 已有账号。浏览器 OAuth 登录和令牌续期需要本机私有客户端配置，详见下方配置说明；发布包不提供实际客户端参数。两种版本的账号库和偏好均保存在用户目录 `~/.agy-switch/`。
 
 - 原生窗口打开（WebView2，Win11 自带运行时），进程内嵌 `127.0.0.1` 本地服务，无浏览器
 - 首次运行自动把当前 IDE 登录快照进账号库
-- 端口占用时自动顺延（8791-8800）；检测到已有 AGY·SWITCH 实例则直接复用
+- 本地服务优先尝试 8791-8800；整段被占用或被 Windows 保留时，自动改用系统分配的空闲端口，无需调整系统端口配置
+- 桌面版通过用户目录中的进程锁和实际服务地址识别已有实例，端口变化后再次双击仍会唤醒原窗口；本地实例通信直接访问回环地址，不经过代理
 - **浅色为默认主题**，工具条右侧 🌙/☀️ 可切换深色，选择保存在本地
 
 | 操作 | 说明 |
 | --- | --- |
-| 🔑 OAuth 登录 | 打开系统浏览器授权 Google 账号后自动入库（本地回调端口 8792-8801），**支持额度查询** |
+| 🔑 OAuth 登录 | 打开系统浏览器授权 Google 账号后自动入库（本地回调优先使用 8792-8801，不可用时自动选择空闲端口），**支持额度查询** |
 | ＋ 添加当前登录 | 收录 IDE 正在使用的账号（凭据管理器正源），无则退回 CLI 凭据文件 |
 | ⇄ 切换 | 凭据写回凭据管理器（对 IDE 真实生效）+ CLI 文件层，切换前自动快照当前登录（绝不丢号） |
-| ⟳ 刷新额度 | 官方分组额度：Gemini Models / Claude and GPT models × 每周 + 5 小时 |
+| ⟳ 刷新额度 | 模型组按行、5 小时与周额度按列展示；按接口实际数据兼容额外模型组 |
 | ▶ / ⏹ 启动/关闭 Antigravity | 单按键动态切换：未运行时显示 `▶` 点击启动；运行时显示 `⏹` 点击关闭 |
 | ↻ 重启 Antigravity | 切换后需重启 IDE 生效；可在设置中勾选"切换后自动重启" |
 | ✎ 重命名 | 修改账号备注（默认备注为邮箱） |
@@ -33,6 +36,10 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
 ### 额度自动刷新
 
 后台线程按设定间隔（默认 5 分钟）**只自动刷新当前使用中的账号**；非活跃账号保持手动。启动时立即同步一次。刷新时会续期 token，并同步回凭据管理器。
+
+额度区按实际返回的分组和时间窗口展开，新增的 `Gemini 4 Argon` 等组保留完整名称，和其他组使用相同的普通行；没有对应时间窗口的单元格留空。每格的重置时间与百分比同行，进度条位于下方。百分比保留一位小数，只有实际满额时才显示 `100%`，`0%` 的进度条为空。悬停数值可查看完整重置时间。旧缓存中的整数百分比会在下一次成功刷新后更新精度。
+
+所有账号使用同一套时间显示规则：当天显示 `HH:mm`，明天显示 `明HH:mm`（中文），其他日期显示 `MM-DD`。非当前账号不会自动刷新；看到过去的重置日期或旧分组时，点击该账号刷新或「刷新全部额度」。
 
 ### 托盘
 
@@ -64,9 +71,10 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
 - **CLI 兼容层**：`~/.gemini/oauth_creds.json`（gemini CLI / 老工具使用）与 `~/.gemini/google_accounts.json` 的 `active` 字段，切换时一并写回
 - **账号库**：`~/.agy-switch/accounts.json`，仅存本地，无任何遥测；所有写入均为临时文件 + 原子替换
 - **注意**：IDE 刷新 token 后会重写 keyring 且不再含 `id_token`，工具按 **refresh_token**（跨刷新稳定）把 keyring 与账号库对齐；若 IDE 与 CLI 凭据不一致，界面会显示警示
-- **额度 API**（daily → sandbox → prod 回退，Bearer 认证），展示与官方 IDE 一致的分组结构：
+- **额度 API**（daily → sandbox → prod 回退，每个账号各自 Bearer 认证），保留官方返回的分组结构：
   - `v1internal:loadCodeAssist` — 解析项目与套餐档位（付费档位优先展示，如 Google AI Pro）
-  - `v1internal:retrieveUserQuotaSummary` — 直接输出官方分组：**Gemini Models / Claude and GPT models × 每周 + 5 小时限额**
+  - `v1internal:retrieveUserQuotaSummary` — 展示 Gemini、Claude / GPT 以及实际返回的 Gemini 4 Argon 等分组；按各组实际窗口显示
+  - Cloud Code 会根据客户端标识筛选返回分组。旧 `vscode/1.99.0 (Antigravity/4.3.0)` 标识会遗漏有权限账号的 Argon；查询使用经本机 CLI 1.4.7 对照验证的 `antigravity/cli/... (aidev_client; ...; auth_method=consumer)` 格式，无需启动 CLI 或切换当前登录账号
 - **Token 刷新**：access_token 过期前 15 分钟用 refresh_token 续期；refresh_token 只能由签发它的 OAuth client 续期，按 antigravity → gemini-cli 顺序回退尝试；IDE 正在使用的账号刷新后同步写回 keyring
 
 ## 为什么有的账号查不了额度（403）
@@ -74,6 +82,8 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
 额度端点会校验 token 的签发 client：gemini-cli 等客户端签发的凭据只含基础 scope，调用 `fetchAvailableModels` 会返回 PERMISSION_DENIED——这类账号**切换不受影响**；查额度请用「＋ 添加当前登录」收录 IDE 正在使用的账号（走 IDE 自己的凭据），或 🔑 OAuth 登录重新添加。
 
 ## 构建
+
+需要 Rust 1.89 或更新版本。旧版 Python 入口的默认服务和 OAuth 回调也支持自动端口回退；显式传入 `--port` 时使用指定端口，`--port 0` 表示由系统分配。Python 备用服务使用同一个账号库，请只运行一个实例，并在使用它时退出桌面版。
 
 构建单个程序：
 
@@ -92,6 +102,21 @@ cargo tauri build --bundles nsis
 ```
 
 无需 Node/npm：前端是静态单文件，`tauri.conf.json` 的窗口 URL 指向进程内嵌服务。发布包还会移除本机用户名路径，并排除私有配置和构建调试文件。
+
+### 本地验证
+
+```bat
+cd src-tauri
+cargo test --locked
+cargo build --release --locked
+target\release\agy-switch.exe --startup-check C:\path\to\new-isolated-check-dir
+```
+
+`--startup-check` 要求一个尚不存在、父目录已存在的隔离目录。在创建窗口前关闭可见性、焦点和可聚焦状态，使用真实 WebView2 加载本地页面，完成后自动退出；不创建托盘、不读取真实账号或同步登录凭据。成功日志位于该目录下的 `.agy-switch/app.log`，包含 `STARTUP_CHECK_OK`。它验证启动链路，不代表截图或人工视觉验收。
+
+Python 端口回归测试：`python -m unittest discover -s tests -p test_port_binding.py -v`。
+
+额度界面回归测试：`python -m unittest discover -s tests -p test_quota_ui.py -v`（需要 Python Playwright 及其 Chromium）。测试在独立浏览器上下文中加载真实前端，用本地虚构账号响应替代接口，覆盖两组/三组、仅周额度、空白窗口、0%/小数、中英文和深浅色窄窗口；不访问真实账号库或控制系统光标。
 
 ## 其他
 

@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 // AGY·SWITCH — Antigravity 账号切换 + 额度监控（Tauri 2 桌面版）
-// 架构：进程内嵌 tiny_http 本地服务（127.0.0.1:8791 起）承载 REST API，
+// 架构：进程内嵌 tiny_http 回环服务承载 REST API，首选端口不可用时由系统分配。
 // Tauri 原生窗口加载该地址；前端与网页版完全一致。
 
 use base64::Engine;
@@ -19,10 +19,18 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
 use tauri::Manager;
 use windows_sys::Win32::Security::Credentials::{CredFree, CredReadW, CredWriteW, CREDENTIALW};
 
+mod local_network;
+use local_network::{bind_loopback, InstanceGuard, InstanceInfo};
+
+static INSTANCE_INFO: OnceLock<InstanceInfo> = OnceLock::new();
+static STARTUP_CHECK_DIR: OnceLock<PathBuf> = OnceLock::new();
+
 // ============================ 常量 ========================================
 
-const APP_VERSION: &str = "1.0.0";
-const UA: &str = "vscode/1.99.0 (Antigravity/4.3.0)";
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+// Cloud Code selects quota groups by client capability. The legacy VS Code
+// identity omits Argon even for an entitled account; use the verified CLI format.
+const UA: &str = "antigravity/cli/1.4.7 (aidev_client; os_type=windows; arch=amd64; auth_method=consumer)";
 const API_HOSTS: [&str; 3] = [
     "https://daily-cloudcode-pa.googleapis.com",
     "https://daily-cloudcode-pa.sandbox.googleapis.com",
@@ -112,6 +120,9 @@ const DETACHED_PROCESS: u32 = 0x0000_0008 | 0x0000_0200;
 // ============================ 路径 ========================================
 
 fn home() -> PathBuf {
+    if let Some(dir) = STARTUP_CHECK_DIR.get() {
+        return dir.clone();
+    }
     PathBuf::from(std::env::var("USERPROFILE").unwrap_or_else(|_| ".".into()))
 }
 fn gemini_dir() -> PathBuf {
@@ -212,6 +223,10 @@ fn app_log(msg: &str) {
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
+    if STARTUP_CHECK_DIR.get().is_some() {
+        app_log("Startup check received a wake request without showing or focusing a window");
+        return;
+    }
     app_log("show_main_window called");
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
@@ -662,8 +677,12 @@ fn fetch_email(token: &str) -> Option<String> {
 const TOKEN_INVALID: &str = "TokenInvalid|";
 
 fn api_post(token: &str, method_name: &str, body: &Value) -> Result<Value, String> {
+    api_post_at_hosts(token, method_name, body, &API_HOSTS)
+}
+
+fn api_post_at_hosts(token: &str, method_name: &str, body: &Value, hosts: &[&str]) -> Result<Value, String> {
     let mut last = String::new();
-    for host in API_HOSTS {
+    for host in hosts {
         let url = format!("{host}/v1internal:{method_name}");
         match http_client().post(&url).bearer_auth(token).header("User-Agent", UA).json(body).send() {
             Ok(resp) => {
@@ -689,8 +708,8 @@ fn api_post(token: &str, method_name: &str, body: &Value) -> Result<Value, Strin
 
 // ============================ 额度监控 =====================================
 
-/// 解析 retrieveUserQuotaSummary 的分组（与官方 IDE 一致：
-/// Gemini Models / Claude and GPT models × 每周 + 5 小时），每周在前
+/// Preserve the server's actual model groups and windows, including weekly-only
+/// Argon. Never infer a missing window from the subscription or model name.
 fn parse_quota_groups(summary: &Value) -> Vec<Value> {
     let mut groups: Vec<Value> = vec![];
     for g in summary.get("groups").and_then(|g| g.as_array()).cloned().unwrap_or_default() {
@@ -704,16 +723,33 @@ fn parse_quota_groups(summary: &Value) -> Vec<Value> {
             let Some(frac) = b.get("remainingFraction").and_then(|v| v.as_f64()) else {
                 continue;
             };
+            if !frac.is_finite() || !(0.0..=1.0).contains(&frac) {
+                continue;
+            }
+            let window = b.get("window").and_then(|v| v.as_str()).unwrap_or("");
+            let bucket_id = b.get("bucketId").and_then(|v| v.as_str()).unwrap_or("");
             let raw = format!(
                 "{} {}",
-                b.get("window").and_then(|v| v.as_str()).unwrap_or(""),
-                b.get("bucketId").and_then(|v| v.as_str()).unwrap_or("")
+                window,
+                bucket_id
             )
             .to_lowercase();
-            let win = if raw.contains("5h") || raw.contains("hour") { "5h" } else { "week" };
+            let win = if raw.contains("5h") || raw.contains("5_hour") || raw.contains("5-hour")
+                || raw.contains("5 hour") || raw.contains("five_hour")
+            {
+                "5h"
+            } else if raw.contains("week") {
+                "week"
+            } else if !window.is_empty() {
+                window
+            } else {
+                bucket_id
+            };
+            // Round to one decimal, but reserve 100% for an actually full bucket.
+            let pct = if frac == 1.0 { 100.0 } else { ((frac * 1000.0).round() / 10.0).min(99.9) };
             buckets.push(json!({
                 "window": win,
-                "pct": (frac * 100.0).round() as i64,
+                "pct": pct,
                 "reset": b.get("resetTime").and_then(|v| v.as_str()).unwrap_or(""),
             }));
         }
@@ -959,6 +995,13 @@ fn account_view(acc: &Value, current_id: &str) -> Value {
 }
 
 fn state_view() -> Value {
+    if STARTUP_CHECK_DIR.get().is_some() {
+        return json!({
+            "live_email": null, "ide_email": null, "creds_email": null,
+            "ide_running": false, "ide_path": "", "creds_path": "",
+            "current_id": null, "accounts": [],
+        });
+    }
     let store = load_store();
     let ide_em = ide_email();
     let file_em = live_email();
@@ -1058,16 +1101,10 @@ fn parse_query(q: &str) -> HashMap<String, String> {
 
 fn oauth_start() -> Result<String, String> {
     let client = login_client()?;
-    let mut listener = None;
-    let mut port = 0u16;
-    for p in 8792..8802 {
-        if let Ok(l) = TcpListener::bind(("127.0.0.1", p)) {
-            listener = Some(l);
-            port = p;
-            break;
-        }
-    }
-    let listener = listener.ok_or("8792-8801 端口均被占用，无法启动 OAuth 回调服务")?;
+    let listener = bind_loopback(8792..=8801)
+        .map_err(|e| format!("无法绑定本地 OAuth 回调端口（已尝试系统分配端口）：{e}"))?;
+    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+    app_log(&format!("OAuth callback bound to 127.0.0.1:{port}"));
     let state = {
         let u = uuid::Uuid::new_v4().simple().to_string();
         u[..16].to_string()
@@ -1264,6 +1301,11 @@ fn route(method: &Method, path: &str, url: &str, body: &Value) -> (u16, String) 
     match (method, path) {
         // ---------- 页面 ----------
         (Method::Get, "/" | "/index.html") => (200, INDEX_HTML.to_string()),
+        // 与账号状态分离的本地实例标识，避免把其他服务或过期记录当作当前实例。
+        (Method::Get, "/api/instance") => json_resp(200, &json!({
+            "app": "agy-switch",
+            "instance_id": INSTANCE_INFO.get().map(|info| info.instance_id.as_str()),
+        })),
         // ---------- 唤醒 ----------
         (Method::Post | Method::Get, "/api/show") => {
             if let Some(app) = APP_HANDLE.get() {
@@ -1550,63 +1592,105 @@ fn bootstrap_first_account() {
 }
 
 fn is_agy_server(port: u16) -> bool {
-    http_client()
+    let Ok(client) = local_network::loopback_client() else { return false };
+    let has_accounts = client
         .get(format!("http://127.0.0.1:{port}/api/state"))
         .timeout(Duration::from_secs(2))
         .send()
         .ok()
         .and_then(|r| r.json::<Value>().ok())
         .map(|v| v.get("accounts").is_some())
-        .unwrap_or(false)
+        .unwrap_or(false);
+    has_accounts && client.get(format!("http://127.0.0.1:{port}/"))
+        .send().ok().and_then(|r| r.text().ok())
+        .is_some_and(|html| html.contains("<title>AGY·SWITCH</title>"))
 }
 
 fn main() {
-    app_log("=== AGY·SWITCH STARTUP ===");
+    // 自动核验使用全新数据目录；窗口创建前禁用可见性、焦点和桌面输入。
+    let args = std::env::args().collect::<Vec<_>>();
+    let startup_check = args.get(1).is_some_and(|arg| arg == "--startup-check");
+    if startup_check {
+        let Some(dir) = args.get(2).map(PathBuf::from) else {
+            eprintln!("--startup-check requires a new, isolated directory");
+            std::process::exit(2);
+        };
+        if let Err(e) = std::fs::create_dir(&dir) {
+            eprintln!("Cannot create new startup-check directory: {e}");
+            std::process::exit(2);
+        }
+        let _ = STARTUP_CHECK_DIR.set(dir);
+    }
     let _ = std::fs::create_dir_all(store_file().parent().unwrap());
-    bootstrap_first_account();
+    app_log("=== AGY·SWITCH STARTUP ===");
+    let instance_dir = home().join(".agy-switch");
+    // 锁由系统随进程释放，不受随机端口、崩溃遗留记录或同时双击影响。
+    let _instance_guard = match InstanceGuard::try_acquire(&instance_dir) {
+        Ok(Some(guard)) => guard,
+        Ok(None) => {
+            if local_network::wake_existing_instance(&instance_dir, Duration::from_secs(5)) {
+                app_log("Existing instance woken at its recorded loopback port; exiting second instance.");
+            } else {
+                app_log("ERROR: Existing instance owns the startup lock but did not respond within 5 seconds.");
+            }
+            return;
+        }
+        Err(e) => {
+            app_log(&format!("ERROR: Cannot acquire instance lock: {e}"));
+            return;
+        }
+    };
 
-    // 单实例检测：若已有 AGY·SWITCH 在运行（且驻留托盘/后台），唤醒其主窗口并直接退出，避免冲突
-    if is_agy_server(8791) {
+    // 兼容仍运行在原固定端口、尚未使用实例锁的旧版。
+    if !startup_check && is_agy_server(8791) {
         app_log("Instance already running on 8791, calling /api/show to focus window");
-        let _ = http_client().post("http://127.0.0.1:8791/api/show").send();
+        if let Ok(client) = local_network::loopback_client() {
+            let _ = client.post("http://127.0.0.1:8791/api/show").send();
+        }
         app_log("Wake request sent, exiting second instance.");
         return;
     }
 
-    // 绑定本地服务端口（8791-8800 取第一个可用者）
-    let mut server_url: Option<String> = None;
-    for p in 8791..=8800 {
-        match Server::http(("127.0.0.1", p)) {
-            Ok(server) => {
-                let server = Arc::new(server);
-                for _ in 0..4 {
-                    let s = server.clone();
-                    std::thread::spawn(move || loop {
-                        match s.recv() {
-                            Ok(r) => handle_request(r),
-                            Err(_) => break,
-                        }
-                    });
-                }
-                server_url = Some(format!("http://127.0.0.1:{p}/"));
-                break;
-            }
-            Err(_) => continue,
-        }
-    }
-    let server_url = match server_url {
-        Some(u) => u,
-        None => {
-            app_log("ERROR: Ports 8791-8800 are all unavailable!");
-            eprintln!("[agy] 端口 8791-8800 均不可用");
+    // 保留已绑定的 listener 交给 HTTP 服务；首选区间被 Windows 保留时使用端口 0。
+    let listener = match bind_loopback(8791..=8800) {
+        Ok(listener) => listener,
+        Err(e) => {
+            app_log(&format!("ERROR: Cannot bind loopback service, including a system-assigned port: {e}"));
             return;
         }
     };
+    let port = listener.local_addr().expect("bound loopback address").port();
+    let info = InstanceInfo { port, instance_id: uuid::Uuid::new_v4().to_string() };
+    let _ = INSTANCE_INFO.set(info.clone());
+    let server = match Server::from_listener(listener, None) {
+        Ok(server) => Arc::new(server),
+        Err(e) => {
+            app_log(&format!("ERROR: Cannot start loopback HTTP service: {e}"));
+            return;
+        }
+    };
+    for _ in 0..4 {
+        let server = server.clone();
+        std::thread::spawn(move || {
+            while let Ok(request) = server.recv() { handle_request(request); }
+        });
+    }
+    if let Err(e) = _instance_guard.publish(&info) {
+        app_log(&format!("ERROR: Cannot publish local instance address: {e}"));
+        return;
+    }
+    let server_url = format!("http://127.0.0.1:{port}/");
     app_log(&format!("Server bound to {server_url}"));
     println!("[agy] AGY·SWITCH v{APP_VERSION} — {server_url}");
 
+    if !startup_check {
+        bootstrap_first_account();
+    }
+
     // 后台自动刷新"当前使用中"账号的额度（间隔见设置 quota_refresh_min，默认 5 分钟）
-    std::thread::spawn(auto_quota_thread);
+    if !startup_check {
+        std::thread::spawn(auto_quota_thread);
+    }
 
     // 偏好：主题 + 上次窗口尺寸/位置
     let prefs = load_prefs();
@@ -1632,12 +1716,28 @@ fn main() {
             app_log("Tauri setup hook started");
             let _ = APP_HANDLE.set(app.handle().clone());
             let url = tauri::Url::parse(&server_url).expect("server url");
+            let check_url = server_url.clone();
             let mut builder = tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::External(url))
                 .title("AGY·SWITCH")
                 .inner_size(w, h)
                 .min_inner_size(360.0, 520.0)
-                .visible(true)
+                .visible(!startup_check)
+                .focused(!startup_check)
+                .focusable(!startup_check)
+                .skip_taskbar(startup_check)
+                .on_page_load(move |window, payload| {
+                    if startup_check
+                        && payload.event() == tauri::webview::PageLoadEvent::Finished
+                        && payload.url().as_str() == check_url
+                    {
+                        app_log("STARTUP_CHECK_OK: hidden WebView2 loaded the loopback page");
+                        window.app_handle().exit(0);
+                    }
+                })
                 .theme(Some(if dark { tauri::Theme::Dark } else { tauri::Theme::Light }));
+            if startup_check {
+                builder = builder.data_directory(home().join("webview"));
+            }
             if let Some((x, y)) = pos {
                 if x >= 0.0 && y >= 0.0 {
                     builder = builder.position(x, y);
@@ -1658,6 +1758,16 @@ fn main() {
                     return Err(e.into());
                 }
             };
+            if startup_check {
+                app_log("Startup check window is hidden, unfocused and non-focusable; account sync and tray are disabled");
+                let handle = app.handle().clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(Duration::from_secs(15));
+                    app_log("ERROR: STARTUP_CHECK_TIMEOUT");
+                    handle.exit(2);
+                });
+                return Ok(());
+            }
             let _ = win.show();
             let _ = win.unminimize();
             let _ = win.set_focus();
@@ -1709,6 +1819,103 @@ fn main() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod quota_parsing_tests {
+    use super::*;
+
+    #[test]
+    fn quota_requests_advertise_argon_support_and_keep_accounts_separate() {
+        let server = Server::http("127.0.0.1:0").unwrap();
+        let host = format!("http://{}", server.server_addr());
+        let worker = std::thread::spawn(move || {
+            for (token, project, fraction) in [("fixture-a", "project-a", 0.74485415),
+                                              ("fixture-b", "project-b", 0.125)] {
+                let mut request = server.recv_timeout(Duration::from_secs(5)).unwrap().unwrap();
+                assert_eq!(request.url(), "/v1internal:retrieveUserQuotaSummary");
+                assert_eq!(request.method(), &Method::Post);
+                let header = |name: &'static str| request.headers().iter()
+                    .find(|h| h.field.equiv(name)).map(|h| h.value.as_str());
+                assert_eq!(header("Authorization"), Some(format!("Bearer {token}").as_str()));
+                let user_agent = header("User-Agent").unwrap();
+                // The upstream omits the third group for the old IDE identity.
+                let argon_capable = user_agent.starts_with("antigravity/cli/")
+                    && user_agent.contains("aidev_client")
+                    && user_agent.contains("auth_method=consumer");
+                let mut body = String::new();
+                request.as_reader().read_to_string(&mut body).unwrap();
+                assert_eq!(serde_json::from_str::<Value>(&body).unwrap(), json!({"project": project}));
+                let mut groups = vec![
+                    json!({"displayName": "Gemini Models", "buckets": [{"window": "weekly", "remainingFraction": 1.0}]}),
+                    json!({"displayName": "Claude and GPT models", "buckets": [{"window": "5h", "remainingFraction": 1.0}]})
+                ];
+                if argon_capable {
+                    groups.push(json!({"displayName": "Gemini 4 Argon", "buckets": [
+                        {"bucketId": "gemini-argon-wtu-weekly", "window": "weekly", "remainingFraction": fraction}
+                    ]}));
+                }
+                request.respond(Response::from_string(json!({"groups": groups}).to_string())).unwrap();
+            }
+        });
+        for (token, project, expected) in [("fixture-a", "project-a", 74.5), ("fixture-b", "project-b", 12.5)] {
+            let summary = api_post_at_hosts(token, "retrieveUserQuotaSummary", &json!({"project": project}), &[&host]).unwrap();
+            let groups = parse_quota_groups(&summary);
+            assert_eq!(groups.len(), 3);
+            assert_eq!(groups[2], json!({"name": "Gemini 4 Argon", "buckets": [
+                {"window": "week", "pct": expected, "reset": ""}
+            ]}));
+        }
+        worker.join().unwrap();
+    }
+
+    #[test]
+    fn preserves_groups_and_real_windows_with_decimal_percentages() {
+        let groups = parse_quota_groups(&json!({"groups": [
+            {"displayName": "Gemini Models", "buckets": [
+                {"window": "FIVE_HOURS", "remainingFraction": 0.9983485, "resetTime": "five-reset"},
+                {"bucketId": "gemini-weekly", "remainingFraction": 0.99999, "resetTime": "week-reset"}
+            ]},
+            {"displayName": "Claude and GPT models", "buckets": [
+                {"window": "weekly", "remainingFraction": 0.0},
+                {"window": "5h", "remainingFraction": 1.0}
+            ]},
+            {"displayName": "Argon", "buckets": [
+                {"window": "weekly", "remainingFraction": 0.25}
+            ]}
+        ]}));
+        assert_eq!(groups.len(), 3);
+        assert_eq!(groups[0]["name"], "Gemini Models");
+        assert_eq!(groups[0]["buckets"], json!([
+            {"window": "week", "pct": 99.9, "reset": "week-reset"},
+            {"window": "5h", "pct": 99.8, "reset": "five-reset"}
+        ]));
+        assert_eq!(groups[1]["name"], "Claude and GPT models");
+        assert_eq!(groups[1]["buckets"][0]["pct"], 0.0);
+        assert_eq!(groups[1]["buckets"][1]["pct"], 100.0);
+        assert_eq!(groups[2], json!({"name": "Argon", "buckets": [
+            {"window": "week", "pct": 25.0, "reset": ""}
+        ]}));
+    }
+
+    #[test]
+    fn skips_missing_or_invalid_fractions_and_preserves_unknown_window_names() {
+        let groups = parse_quota_groups(&json!({"groups": [
+            {"displayName": "invalid", "buckets": [
+                {"window": "week"}, {"remainingFraction": null},
+                {"remainingFraction": "0.5"}, {"remainingFraction": -0.1},
+                {"remainingFraction": 1.01}
+            ]},
+            {"displayName": "future", "buckets": [
+                {"window": "24 hours", "remainingFraction": 0.5},
+                {"bucketId": "custom-month", "remainingFraction": 0.75}
+            ]}
+        ]}));
+        assert_eq!(groups, vec![json!({"name": "future", "buckets": [
+            {"window": "24 hours", "pct": 50.0, "reset": ""},
+            {"window": "custom-month", "pct": 75.0, "reset": ""}
+        ]})]);
+    }
 }
 
 #[cfg(test)]
