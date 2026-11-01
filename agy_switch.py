@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-APP_VERSION = "1.1.1"
+APP_VERSION = "1.1.2"
 HOME = Path.home()
 GEMINI_DIR = HOME / ".gemini"
 LIVE_CREDS = GEMINI_DIR / "oauth_creds.json"
@@ -273,8 +273,57 @@ def ensure_token(acc):
     return creds["access_token"]
 
 
-class TokenInvalid(Exception):
-    pass
+def _safe_validation_url(value):
+    if not isinstance(value, str):
+        return ""
+    try:
+        url = urllib.parse.urlsplit(value)
+        if (url.scheme.lower() != "https" or url.hostname != "accounts.google.com"
+                or url.username is not None or url.password is not None
+                or url.port not in (None, 443)):
+            return ""
+        return value
+    except ValueError:
+        return ""
+
+
+class ApiAuthError(Exception):
+    def __init__(self, status, reason="", message="", validation_url=""):
+        self.status = status
+        self.reason = reason if isinstance(reason, str) else ""
+        self.google_message = message if isinstance(message, str) else ""
+        self.validation_url = (_safe_validation_url(validation_url)
+                               if status == 403 and self.reason == "VALIDATION_REQUIRED" else "")
+        super().__init__(self.google_message or f"HTTP {status}")
+
+
+def _parse_auth_error(error):
+    reason = message = validation_url = ""
+    try:
+        payload = json.loads(error.read().decode("utf-8", "replace"))
+        detail = payload.get("error", {})
+        if isinstance(detail, dict):
+            raw_message = detail.get("message")
+            message = raw_message if isinstance(raw_message, str) else ""
+            details = detail.get("details")
+            if isinstance(details, list):
+                for item in details:
+                    if not isinstance(item, dict) or item.get("@type") != "type.googleapis.com/google.rpc.ErrorInfo":
+                        continue
+                    raw_reason = item.get("reason")
+                    if isinstance(raw_reason, str) and raw_reason:
+                        reason = raw_reason
+                        metadata = item.get("metadata")
+                        if isinstance(metadata, dict):
+                            validation_url = metadata.get("validation_url") or ""
+                        break
+            if not reason and isinstance(detail.get("status"), str):
+                reason = detail["status"]
+    except (ValueError, AttributeError, TypeError):
+        pass
+    finally:
+        error.close()
+    return ApiAuthError(error.code, reason, message, validation_url)
 
 
 def api_post(token, method, body, timeout=20):
@@ -291,7 +340,7 @@ def api_post(token, method, body, timeout=20):
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code in (401, 403):
-                raise TokenInvalid(f"HTTP {e.code}: token 无效或权限不足") from e
+                raise _parse_auth_error(e) from e
             last_err = e
         except Exception as e:  # 网络错误 -> 试下一个域名
             last_err = e
@@ -361,18 +410,21 @@ def _sort_key(m):
 
 def refresh_quota(acc):
     """拉取一个账号的额度，写入 acc['quota'] 并返回。失败时写 error。"""
+    tier = ""
     try:
         token = ensure_token(acc)
         if not acc.get("email"):
             acc["email"] = fetch_email(token) or acc.get("email")
 
         # 项目 / 套餐
-        project, tier = "", ""
+        project = ""
         try:
             info = api_post(token, "loadCodeAssist", {"metadata": {"ideType": "ANTIGRAVITY"}})
             project = info.get("cloudaicompanionProject") or ""
-            t = info.get("currentTier") or info.get("paidTier") or {}
-            tier = t.get("displayName") or t.get("id") or ""
+            t = info.get("paidTier") or info.get("currentTier") or {}
+            tier = t.get("name") or t.get("displayName") or t.get("id") or ""
+        except ApiAuthError:
+            raise
         except Exception:
             pass
 
@@ -384,6 +436,8 @@ def refresh_quota(acc):
         try:
             summary = api_post(token, "retrieveUserQuotaSummary", body)
             summary_groups = summary.get("groups") or []
+        except ApiAuthError:
+            raise
         except Exception:
             pass
 
@@ -418,14 +472,24 @@ def refresh_quota(acc):
             "models": models,
             "error": "" if models else "未返回任何带额度的模型",
         }
-    except TokenInvalid as e:
+    except ApiAuthError as e:
+        if e.status == 401:
+            message = "认证已失效，请重新登录后再查询额度"
+        elif e.reason == "VALIDATION_REQUIRED":
+            message = "Google 要求完成账号验证，请通过官方验证链接完成验证后重试" if e.validation_url else "Google 要求完成账号验证，请在 Google 账号中完成验证后重试"
+        else:
+            message = "Google 拒绝了额度查询请求，请检查账号权限后重试"
+        if e.google_message:
+            message += f"（Google: {e.google_message}）"
         acc["quota"] = {"fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                        "tier": "", "models": [],
-                        "error": f"凭据无法查询额度（{e}）。该凭据可能由其他客户端签发（如 gemini-cli），"
-                                 f"切换可用；查额度请用「🔑 OAuth 登录」重新添加此账号"}
+                        "tier": tier or acc.get("plan_type") or "", "models": [], "error": message,
+                        "error_code": e.reason or f"HTTP_{e.status}",
+                        "validation_url": e.validation_url, "http_status": e.status,
+                        "google_message": e.google_message}
     except Exception as e:
         acc["quota"] = {"fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                        "tier": "", "models": [], "error": str(e)}
+                        "tier": tier or acc.get("plan_type") or "", "models": [], "error": str(e),
+                        "error_code": "", "validation_url": ""}
     return acc["quota"]
 
 
@@ -489,6 +553,7 @@ class OAuthCallback(BaseHTTPRequestHandler):
                 "expiry_date": int(time.time() * 1000) + int(tok.get("expires_in", 3600)) * 1000,
                 "scope": tok.get("scope", LOGIN_SCOPES),
                 "email": email,
+                "_client_key": client[0],
             }
             if tok.get("id_token"):
                 creds["id_token"] = tok["id_token"]
@@ -637,6 +702,9 @@ def account_view(acc, current_id):
         "quota": {
             "fetched_at": q.get("fetched_at"), "tier": q.get("tier") or acc.get("plan_type"),
             "error": q.get("error"), "models": q.get("models") or [],
+            "error_code": q.get("error_code") or "", "http_status": q.get("http_status"),
+            "validation_url": (_safe_validation_url(q.get("validation_url"))
+                               if q.get("http_status") == 403 and q.get("error_code") == "VALIDATION_REQUIRED" else ""),
         },
     }
 

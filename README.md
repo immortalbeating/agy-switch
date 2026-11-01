@@ -6,10 +6,10 @@ Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML
 
 Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy-switch/releases/latest) 下载：
 
-- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.1/agy-switch-1.1.1-windows-x64-setup.exe)：运行安装程序，按向导完成安装
-- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.1/agy-switch-1.1.1-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
+- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.2/agy-switch-1.1.2-windows-x64-setup.exe)：运行安装程序，按向导完成安装
+- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.2/agy-switch-1.1.2-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
 
-当前源码版本为 **1.1.1**，变更见 [更新日志](CHANGELOG.md)。
+当前源码版本为 **1.1.2**，变更见 [更新日志](CHANGELOG.md)。
 
 首次使用可以通过「添加当前登录」收录 IDE 已有账号。浏览器 OAuth 登录和令牌续期需要本机私有客户端配置，详见下方配置说明；发布包不提供实际客户端参数。两种版本的账号库和偏好均保存在用户目录 `~/.agy-switch/`。
 
@@ -78,9 +78,15 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
   - Cloud Code 会根据客户端标识筛选返回分组。旧 `vscode/1.99.0 (Antigravity/4.3.0)` 标识会遗漏有权限账号的 Argon；查询使用经本机 CLI 1.4.7 对照验证的 `antigravity/cli/... (aidev_client; ...; auth_method=consumer)` 格式，无需启动 CLI 或切换当前登录账号
 - **Token 刷新**：access_token 过期前 15 分钟用 refresh_token 续期；refresh_token 只能由签发它的 OAuth client 续期，按 antigravity → gemini-cli 顺序回退尝试；IDE 正在使用的账号刷新后同步写回 keyring
 
-## 为什么有的账号查不了额度（403）
+## 为什么登录成功后仍查不了额度
 
-额度端点会校验 token 的签发 client：gemini-cli 等客户端签发的凭据只含基础 scope，调用 `fetchAvailableModels` 会返回 PERMISSION_DENIED——这类账号**切换不受影响**；查额度请用「＋ 添加当前登录」收录 IDE 正在使用的账号（走 IDE 自己的凭据），或 🔑 OAuth 登录重新添加。
+Google 登录成功和 Antigravity 的使用资格是两步检查。程序根据接口的实际错误原因提示，不能仅凭 HTTP 403 判断凭据来自哪个客户端。
+
+- **需要验证账号（`VALIDATION_REQUIRED`）**：Google 要求完成账号验证，令牌有效、订阅为 Pro 的账号也可能遇到。点击账号卡片中的「验证账号」，在 Google 官方页面确认登录的是该邮箱并完成验证，然后回到工具刷新此账号额度。若链接失效，先刷新额度获取新入口；没有入口时在官方 Antigravity 中登录该账号并按提示验证。
+- **HTTP 401**：登录凭据已失效，需要重新登录该账号，或收录 IDE 中最新的登录凭据。
+- **其他 HTTP 403**：Google 拒绝此账号访问额度接口，界面保留具体原因。请按官方 Antigravity 对此账号的权限提示处理；重复 OAuth 登录不一定能解决。
+
+验证须由账号本人完成，工具不会代答验证码、切换浏览器账号或绕过 Google 检查。验证链接仅接受 `https://accounts.google.com` 官方地址，在系统浏览器中打开；链接与账号库一样仅保存在本机，不写入应用日志。
 
 ## 构建
 
@@ -118,6 +124,8 @@ target\release\agy-switch.exe --startup-check C:\path\to\new-isolated-check-dir
 Python 端口回归测试：`python -m unittest discover -s tests -p test_port_binding.py -v`。
 
 额度界面回归测试：`python -m unittest discover -s tests -p test_quota_ui.py -v`（需要 Python Playwright 及其 Chromium）。测试在独立浏览器上下文中加载真实前端，用本地虚构账号响应替代接口，覆盖两组/三组、仅周额度、空白窗口、0%/小数、中英文和深浅色窄窗口；不访问真实账号库或控制系统光标。
+
+API 错误回归测试：`python -m unittest discover -s tests -p test_api_errors.py -v`。使用隔离配置和虚构响应，覆盖账号验证、401/403 分类、官方链接校验和错误传播；不会读取真实账号或请求 Google 接口。
 
 ## 其他
 

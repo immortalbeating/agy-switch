@@ -49,7 +49,7 @@ class QuotaUITests(unittest.TestCase):
         for context in self.contexts:
             context.close()
 
-    def open_ui(self, groups, width=360, theme="light", lang="zh", error=""):
+    def open_ui(self, groups, width=360, theme="light", lang="zh", error="", quota_extra=None):
         context = self.browser.new_context(
             viewport={"width": width, "height": 850}, device_scale_factor=2,
             color_scheme=theme, reduced_motion="reduce")
@@ -61,6 +61,7 @@ class QuotaUITests(unittest.TestCase):
                    "current": False, "notch": "#4c8bd9", "plan_type": "Pro",
                    "quota": {"tier": "Pro", "fetched_at": datetime.now(timezone.utc).isoformat(),
                              "groups": copy.deepcopy(groups), "error": error}}
+        account["quota"].update(quota_extra or {})
         payload = {"accounts": [account], "current_id": None, "live_email": None,
                    "ide_email": None, "creds_email": None, "ide_running": False,
                    "ide_path": "", "creds_path": ""}
@@ -137,6 +138,36 @@ class QuotaUITests(unittest.TestCase):
         page.wait_for_function("document.querySelectorAll('.quota-table tbody tr').length === 3")
         self.assertEqual(page.locator(".quota-table tbody .qtitle").all_text_contents(),
                          ["Gemini", "Gemini 4 Argon", "Claude / GPT"])
+
+    def test_verification_opens_only_the_official_link_and_refresh_can_recover(self):
+        url = "https://accounts.google.com/v3/signin/continue?fixture=1&continue=https%3A%2F%2Fdevelopers.google.com%2F"
+        for theme, lang in [("light", "zh"), ("dark", "en")]:
+            with self.subTest(theme=theme, lang=lang):
+                page, payload = self.open_ui([], theme=theme, lang=lang, error="verification needed", quota_extra={
+                    "http_status": 403, "error_code": "VALIDATION_REQUIRED", "validation_url": url})
+                # Intercept the native opener; no real browser or account is opened.
+                page.evaluate("window.openedUrls = []; window.__TAURI__ = {opener:{openUrl: async url => window.openedUrls.push(url)}}")
+                link = page.locator(".q-verify")
+                self.assertIn("验证账号" if lang == "zh" else "Verify account", link.inner_text())
+                link.click()
+                self.assertEqual(page.evaluate("window.openedUrls"), [url])
+                self.assertNotIn("gemini-cli", page.locator(".q-error").inner_text())
+                self.assertEqual(page.locator(".qbar").count(), 0)
+                self.assertFalse(page.locator(".q-error").evaluate("e => e.scrollWidth > e.clientWidth"))
+                payload["accounts"][0]["quota"] = {"error": "", "groups": shared_groups()}
+                page.locator(".acc-ghost-actions button").first.click()
+                page.locator(".q-error").wait_for(state="hidden")
+                self.assertEqual(page.locator(".q-error").count(), 0)
+                self.assertEqual(page.locator(".qbar").count(), 4)
+
+    def test_verification_without_a_safe_url_shows_manual_recovery(self):
+        for url in ["", "javascript:alert(1)", "https://accounts.google.com.evil.invalid/",
+                    "https://user@accounts.google.com/", "https://accounts.google.com:444/"]:
+            with self.subTest(url=url):
+                page, _ = self.open_ui([], error="verification needed", quota_extra={
+                    "http_status": 403, "error_code": "VALIDATION_REQUIRED", "validation_url": url})
+                self.assertEqual(page.locator(".q-verify").count(), 0)
+                self.assertIn("官方 Antigravity", page.locator(".q-error").inner_text())
 
     def test_layout_in_both_themes_and_languages_at_small_window_sizes(self):
         for width, theme, lang in [(360, "light", "zh"), (410, "dark", "zh"), (360, "light", "en")]:

@@ -21,6 +21,8 @@ use windows_sys::Win32::Security::Credentials::{CredFree, CredReadW, CredWriteW,
 
 mod local_network;
 use local_network::{bind_loopback, InstanceGuard, InstanceInfo};
+mod cloud_code_error;
+use cloud_code_error::CloudCodeError;
 
 static INSTANCE_INFO: OnceLock<InstanceInfo> = OnceLock::new();
 static STARTUP_CHECK_DIR: OnceLock<PathBuf> = OnceLock::new();
@@ -673,15 +675,12 @@ fn fetch_email(token: &str) -> Option<String> {
         .map(String::from)
 }
 
-// TokenInvalid 用前缀标记，调用方据其给出可操作提示
-const TOKEN_INVALID: &str = "TokenInvalid|";
-
-fn api_post(token: &str, method_name: &str, body: &Value) -> Result<Value, String> {
+fn api_post(token: &str, method_name: &str, body: &Value) -> Result<Value, CloudCodeError> {
     api_post_at_hosts(token, method_name, body, &API_HOSTS)
 }
 
-fn api_post_at_hosts(token: &str, method_name: &str, body: &Value, hosts: &[&str]) -> Result<Value, String> {
-    let mut last = String::new();
+fn api_post_at_hosts(token: &str, method_name: &str, body: &Value, hosts: &[&str]) -> Result<Value, CloudCodeError> {
+    let mut last = CloudCodeError::from("未配置额度接口端点");
     for host in hosts {
         let url = format!("{host}/v1internal:{method_name}");
         match http_client().post(&url).bearer_auth(token).header("User-Agent", UA).json(body).send() {
@@ -690,20 +689,20 @@ fn api_post_at_hosts(token: &str, method_name: &str, body: &Value, hosts: &[&str
                 match resp.text() {
                     Ok(t) => {
                         if st.is_success() {
-                            return serde_json::from_str(&t).map_err(|e| e.to_string());
+                            return serde_json::from_str(&t).map_err(|e| e.to_string().into());
                         }
                         if st.as_u16() == 401 || st.as_u16() == 403 {
-                            return Err(format!("{TOKEN_INVALID}HTTP {}: token 无效或权限不足", st.as_u16()));
+                            return Err(CloudCodeError::from_http(method_name, st.as_u16(), &t));
                         }
-                        last = format!("HTTP {st}: {}", truncate(&t, 160));
+                        last = CloudCodeError::from_http(method_name, st.as_u16(), &t);
                     }
-                    Err(e) => last = e.to_string(),
+                    Err(e) => last = e.to_string().into(),
                 }
             }
-            Err(e) => last = e.to_string(),
+            Err(e) => last = e.to_string().into(),
         }
     }
-    Err(format!("{method_name} 三个端点均失败: {}", truncate(&last, 160)))
+    Err(last)
 }
 
 // ============================ 额度监控 =====================================
@@ -762,7 +761,8 @@ fn parse_quota_groups(summary: &Value) -> Vec<Value> {
 }
 
 fn refresh_quota(acc: &mut Value) {
-    let result = (|| -> Result<Value, String> {
+    let mut resolved_tier = acc.get("plan_type").cloned().unwrap_or(json!(""));
+    let result = (|| -> Result<Value, CloudCodeError> {
         let token = ensure_token(acc)?;
         let email_missing = acc
             .get("email")
@@ -777,7 +777,11 @@ fn refresh_quota(acc: &mut Value) {
 
         // 项目 / 套餐（付费档位优先展示，如 Google AI Pro）
         let (mut project, mut tier) = (String::new(), String::new());
-        if let Ok(info) = api_post(&token, "loadCodeAssist", &json!({"metadata": {"ideType": "ANTIGRAVITY"}})) {
+        let info = match api_post(&token, "loadCodeAssist", &json!({"metadata": {"ideType": "ANTIGRAVITY"}})) {
+            Err(error) if matches!(error.status, Some(401 | 403)) => return Err(error),
+            result => result,
+        };
+        if let Ok(info) = info {
             project = info
                 .get("cloudaicompanionProject")
                 .and_then(|v| v.as_str())
@@ -798,6 +802,7 @@ fn refresh_quota(acc: &mut Value) {
             } else {
                 paid
             };
+            if !tier.is_empty() { resolved_tier = json!(tier); }
         }
 
         let body = if project.is_empty() { json!({}) } else { json!({"project": project}) };
@@ -821,14 +826,7 @@ fn refresh_quota(acc: &mut Value) {
 
     acc["quota"] = match result {
         Ok(q) => q,
-        Err(e) => {
-            let msg = if let Some(rest) = e.strip_prefix(TOKEN_INVALID) {
-                format!("凭据无法查询额度（{rest}）。该凭据由其他客户端签发（如 gemini-cli），IDE 后端只认 IDE 自己签发的凭据；请用「＋ 添加当前登录」收录 IDE 正在使用的账号，或 🔑 OAuth 登录添加")
-            } else {
-                e
-            };
-            json!({"fetched_at": now_iso(), "tier": "", "groups": [], "error": msg})
-        }
+        Err(e) => e.quota_failure(&resolved_tier, &now_iso()),
     };
 }
 
@@ -989,6 +987,12 @@ fn account_view(acc: &Value, current_id: &str) -> Value {
             "fetched_at": q.get("fetched_at").cloned().unwrap_or(Value::Null),
             "tier": tier,
             "error": q.get("error").cloned().unwrap_or(json!("")),
+            "error_code": q.get("error_code").and_then(Value::as_str).unwrap_or(""),
+            "http_status": q.get("http_status").and_then(Value::as_u64),
+            "validation_url": if q["http_status"] == 403 && q["error_code"] == "VALIDATION_REQUIRED" {
+                q.get("validation_url").and_then(Value::as_str)
+                    .and_then(cloud_code_error::google_validation_url).unwrap_or_default()
+            } else { String::new() },
             "groups": q.get("groups").cloned().unwrap_or(json!([])),
         },
     })
@@ -1222,6 +1226,7 @@ fn exchange_and_store(code: &str, redirect_uri: &str) -> Result<String, String> 
         "expiry_date": now_ms() + exp * 1000,
         "scope": tok.get("scope").cloned().unwrap_or(json!(LOGIN_SCOPES)),
         "email": email,
+        "_client_key": client.key,
     });
     if let Some(idt) = tok.get("id_token") {
         if !idt.is_null() {
@@ -1824,6 +1829,53 @@ fn main() {
 #[cfg(test)]
 mod quota_parsing_tests {
     use super::*;
+
+    #[test]
+    fn quota_view_keeps_verification_recovery_and_excludes_credentials() {
+        let body = json!({"error": {"status": "PERMISSION_DENIED", "message": "Verify account",
+            "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "VALIDATION_REQUIRED",
+                "metadata": {"validation_url": "https://accounts.google.com/v3/signin/continue?fixture=1"}}]}});
+        let error = CloudCodeError::from_http("retrieveUserQuotaSummary", 403, &body.to_string());
+        let mut acc = json!({"id": "fixture-account", "creds": {"access_token": "fixture-private-access", "refresh_token": "fixture-private-refresh"},
+            "quota": error.quota_failure(&json!("Google AI Pro"), "fixture-time")});
+        let view = account_view(&acc, "");
+        assert_eq!(view["quota"]["error_code"], "VALIDATION_REQUIRED");
+        assert_eq!(view["quota"]["http_status"], 403);
+        assert_eq!(view["quota"]["tier"], "Google AI Pro");
+        assert_eq!(view["quota"]["validation_url"], "https://accounts.google.com/v3/signin/continue?fixture=1");
+        assert!(!view.to_string().contains("fixture-private"));
+        assert!(view.get("creds").is_none());
+        acc["quota"]["validation_url"] = json!("https://accounts.google.com.evil.invalid/");
+        assert_eq!(account_view(&acc, "")["quota"]["validation_url"], "");
+        acc["quota"] = json!({"error": "", "groups": []});
+        let quota = &account_view(&acc, "")["quota"];
+        assert_eq!(quota["validation_url"], "");
+        assert_eq!(quota["error_code"], "");
+        assert!(quota["http_status"].is_null());
+    }
+
+    #[test]
+    fn auth_errors_keep_server_reason_and_do_not_try_another_host() {
+        for status in [401, 403] {
+            let server = Server::http("127.0.0.1:0").unwrap();
+            let fallback = Server::http("127.0.0.1:0").unwrap();
+            let host = format!("http://{}", server.server_addr());
+            let fallback_host = format!("http://{}", fallback.server_addr());
+            let worker = std::thread::spawn(move || {
+                let request = server.recv_timeout(Duration::from_secs(5)).unwrap().unwrap();
+                let body = json!({"error": {"status": if status == 401 { "UNAUTHENTICATED" } else { "PERMISSION_DENIED" },
+                    "details": [{"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                        "reason": if status == 401 { "ACCESS_TOKEN_EXPIRED" } else { "VALIDATION_REQUIRED" },
+                        "metadata": {"validation_url": "https://accounts.google.com/v3/signin/continue?fixture=1"}}]}});
+                request.respond(Response::from_string(body.to_string()).with_status_code(status)).unwrap();
+            });
+            let error = api_post_at_hosts("fixture-token", "retrieveUserQuotaSummary", &json!({}), &[&host, &fallback_host]).unwrap_err();
+            assert_eq!(error.status, Some(status));
+            assert_eq!(error.reason, if status == 401 { "ACCESS_TOKEN_EXPIRED" } else { "VALIDATION_REQUIRED" });
+            assert!(fallback.recv_timeout(Duration::from_millis(100)).unwrap().is_none());
+            worker.join().unwrap();
+        }
+    }
 
     #[test]
     fn quota_requests_advertise_argon_support_and_keep_accounts_separate() {
