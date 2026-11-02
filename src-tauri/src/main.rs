@@ -333,17 +333,20 @@ fn decode_id_token_email(jwt: &str) -> Option<String> {
 fn ide_creds_from_blob(blob: &str) -> Option<Value> {
     let v: Value = serde_json::from_str(blob).ok()?;
     let tok = v.get("token")?;
-    let email = v
-        .get("id_token")
-        .and_then(|t| t.as_str())
-        .and_then(decode_id_token_email)
-        .unwrap_or_default();
+    // Both layouts exist: native snapshots can keep id_token at the root,
+    // while our refreshed credentials put it inside token. Keep either form.
+    let identity = [v.get("id_token"), tok.get("id_token")].into_iter().flatten()
+        .filter_map(Value::as_str)
+        .find_map(|id_token| decode_id_token_email(id_token)
+            .filter(|email| !email.trim().is_empty())
+            .map(|email| (id_token, email)));
+    let email = identity.as_ref().map(|(_, email)| email.as_str()).unwrap_or_default();
     let expiry_ms = tok
         .get("expiry")
         .and_then(|e| e.as_str())
         .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
         .map(|d| d.timestamp_millis());
-    Some(json!({
+    let mut creds = json!({
         "access_token": tok.get("access_token").cloned().unwrap_or(json!("")),
         "refresh_token": tok.get("refresh_token").cloned().unwrap_or(json!("")),
         "token_type": tok.get("token_type").cloned().unwrap_or(json!("Bearer")),
@@ -352,7 +355,11 @@ fn ide_creds_from_blob(blob: &str) -> Option<Value> {
         "plan_type": "",
         "_source": "ide",
         "_ide_blob": blob,
-    }))
+    });
+    if let Some((id_token, _)) = identity {
+        creds["id_token"] = json!(id_token);
+    }
+    Some(creds)
 }
 
 fn store_find_by_refresh(store: &Value, rt: &str) -> Option<usize> {
@@ -839,14 +846,14 @@ fn switch_to(store: &mut Value, acc: &Value) -> Result<Option<String>, String> {
         let ce = cur.get("email").and_then(|e| e.as_str()).unwrap_or("").to_string();
         let target = acc.get("email").and_then(|e| e.as_str()).unwrap_or("");
         if !ce.is_empty() && ce != target {
-            upsert_account(store, cur, None);
+            let _ = reconcile_snapshot_account(store, cur, None);
         }
     }
     if let Some(cur) = read_live_creds() {
         let ce = cur.get("email").and_then(|e| e.as_str()).unwrap_or("").to_string();
         let target = acc.get("email").and_then(|e| e.as_str()).unwrap_or("");
         if !ce.is_empty() && ce != target {
-            upsert_account(store, cur, None);
+            let _ = reconcile_snapshot_account(store, cur, None);
         }
     }
     // 2. 目标凭据写回两个凭据源（keyring 带 _ide_blob 时字节级还原）
@@ -1337,17 +1344,19 @@ fn route(method: &Method, path: &str, url: &str, body: &Value) -> (u16, String) 
         // ---------- 账号操作 ----------
         (Method::Post, "/api/add") => {
             // 优先收编 IDE 正在使用的账号（keyring 正源），无则退回 CLI 文件层
-            let creds = match keyring_read_blob().and_then(|b| ide_creds_from_blob(&b)) {
-                Some(c) => Some(c),
-                None => read_live_creds(),
-            };
+            let creds = ide_current_creds().or_else(read_live_creds);
             let Some(creds) = creds else {
                 return err_resp(400, "未找到当前登录凭据（IDE 未登录且无 CLI 凭据文件）");
             };
+            if creds.get("email").and_then(Value::as_str).unwrap_or("").trim().is_empty() {
+                return err_resp(400, "暂时无法识别当前账号邮箱，请在 Antigravity 中完成登录后重试");
+            }
             let label = body.get("label").and_then(|v| v.as_str()).unwrap_or("");
             let mut store = load_store();
-            let acc = upsert_account(&mut store, creds, Some(label));
-            let id = acc["id"].as_str().unwrap_or("").to_string();
+            let Some(id) = reconcile_snapshot_account(&mut store, creds, Some(label)) else {
+                return err_resp(400, "当前登录快照的账号信息不一致或缺少续期凭据，请重新登录后重试");
+            };
+            let id = id.as_str().unwrap_or("").to_string();
             if let Some(i) = find_idx(&store, &id) {
                 refresh_quota(&mut store["accounts"][i]);
             }
@@ -1539,43 +1548,65 @@ fn handle_request(mut req: tiny_http::Request) {
 
 // ============================ 启动 ========================================
 
+/// Reconcile a collected snapshot without inventing anonymous accounts or
+/// replacing a newer saved login with an expired IDE/keyring snapshot.
+fn reconcile_snapshot_account(store: &mut Value, mut creds: Value, label: Option<&str>) -> Option<Value> {
+    let rt = creds.get("refresh_token").and_then(Value::as_str).filter(|s| !s.is_empty())?;
+    let by_refresh = store_find_by_refresh(store, rt);
+    let mut email = creds.get("email").and_then(Value::as_str).unwrap_or("").trim().to_string();
+    if let Some(i) = by_refresh {
+        let stored_email = store["accounts"][i].get("email").and_then(Value::as_str).unwrap_or("");
+        if !email.is_empty() && !stored_email.is_empty() && !stored_email.eq_ignore_ascii_case(&email) {
+            return None;
+        }
+    }
+    let by_email = if email.is_empty() { None } else {
+        store["accounts"].as_array()?.iter().position(|a| a.get("email").and_then(Value::as_str)
+            .map(|stored| stored.eq_ignore_ascii_case(&email)).unwrap_or(false))
+    };
+    if let Some(i) = by_email.or(by_refresh) {
+        let acc = &mut store["accounts"][i];
+        let stored_email = acc.get("email").and_then(Value::as_str).unwrap_or("");
+        if !stored_email.is_empty() {
+            email = stored_email.to_string();
+        }
+        if !email.is_empty() {
+            creds["email"] = json!(email);
+            acc["email"] = json!(email);
+        }
+        let incoming_expiry = creds.get("expiry_date").and_then(Value::as_i64).unwrap_or(0);
+        let stored_expiry = acc["creds"].get("expiry_date").and_then(Value::as_i64).unwrap_or(0);
+        let stored_access_missing = acc["creds"].get("access_token").and_then(Value::as_str).unwrap_or("").is_empty();
+        if stored_access_missing || incoming_expiry >= stored_expiry {
+            acc["creds"] = creds;
+        }
+        if let Some(label) = label.filter(|s| !s.is_empty()) {
+            acc["label"] = json!(label);
+        }
+        return acc.get("id").cloned();
+    }
+    if email.is_empty() { return None; }
+    creds["email"] = json!(email);
+    Some(upsert_account(store, creds, label)["id"].clone())
+}
+
 fn bootstrap_first_account() {
     let mut store = load_store();
     let empty = store["accounts"].as_array().map(|a| a.is_empty()).unwrap_or(true);
     let mut ide_id: Option<Value> = None;
     let mut dirty = false;
-    // IDE 正源账号按 refresh_token 对齐：缺席则收编，已在库中则原位更新凭据、补邮箱
+    // Resolve identity before adding; an expired keyring can outlive a new OAuth login.
     if let Some(creds) = ide_current_creds() {
-        let rt = creds["refresh_token"].as_str().unwrap_or("").to_string();
-        match store_find_by_refresh(&store, &rt) {
-            Some(i) => {
-                store["accounts"][i]["creds"] = creds.clone();
-                let cur_email = store["accounts"][i]
-                    .get("email")
-                    .and_then(|e| e.as_str())
-                    .unwrap_or("");
-                if cur_email.is_empty() {
-                    if let Some(e) = creds.get("email").and_then(|e| e.as_str()) {
-                        store["accounts"][i]["email"] = json!(e);
-                    }
-                }
-                if store["current_id"].is_null() {
-                    ide_id = store["accounts"][i].get("id").cloned();
-                }
-                dirty = true;
-            }
-            None => {
-                let acc = upsert_account(&mut store, creds, None);
-                ide_id = Some(acc["id"].clone());
-                dirty = true;
-            }
-        }
+        let before = store.clone();
+        ide_id = reconcile_snapshot_account(&mut store, creds, None);
+        dirty |= store != before;
     }
     let empty_after = store["accounts"].as_array().map(|a| a.is_empty()).unwrap_or(true);
     if empty_after {
         if let Some(creds) = read_live_creds() {
-            upsert_account(&mut store, creds, None);
-            dirty = true;
+            let before = store.clone();
+            let _ = reconcile_snapshot_account(&mut store, creds, None);
+            dirty |= store != before;
         }
     }
     // 空库或首次对齐 IDE 账号时，把当前账号指向 IDE 登录
@@ -1967,6 +1998,98 @@ mod quota_parsing_tests {
             {"window": "24 hours", "pct": 50.0, "reset": ""},
             {"window": "custom-month", "pct": 75.0, "reset": ""}
         ]})]);
+    }
+}
+
+#[cfg(test)]
+mod account_identity_tests {
+    use super::*;
+
+    fn id_token(email: &str) -> String {
+        let payload = base64::engine::general_purpose::URL_SAFE_NO_PAD
+            .encode(json!({"email": email}).to_string());
+        format!("fixture.{payload}.fixture")
+    }
+
+    fn saved_store() -> Value {
+        json!({"current_id": "known", "accounts": [{"id": "known", "email": "demo@example.invalid",
+            "label": "Custom label", "quota": {"groups": ["cached"]},
+            "creds": {"email": "demo@example.invalid", "access_token": "new-access", "refresh_token": "new-refresh", "expiry_date": 2000}}]})
+    }
+
+    #[test]
+    fn reads_identity_from_both_ide_blob_layouts_and_keeps_it_after_refresh() {
+        for nested in [false, true] {
+            let token = id_token("demo@example.invalid");
+            let mut blob = json!({"auth_method": "consumer", "token": {
+                "access_token": "fixture-access", "refresh_token": "fixture-refresh"}});
+            if nested { blob["token"]["id_token"] = json!(token); }
+            else { blob["id_token"] = json!(token); }
+            let original = blob.to_string();
+            let creds = ide_creds_from_blob(&original).unwrap();
+            assert_eq!(creds["email"], "demo@example.invalid");
+            assert_eq!(blob_from_creds(&creds, false), original);
+            assert_eq!(ide_creds_from_blob(&blob_from_creds(&creds, true)).unwrap()["email"], "demo@example.invalid");
+        }
+    }
+
+    #[test]
+    fn an_expired_ide_snapshot_does_not_replace_a_newer_login_or_duplicate_it() {
+        let mut store = saved_store();
+        let before = store.clone();
+        let creds = json!({"email": "demo@example.invalid", "access_token": "old-access",
+            "refresh_token": "old-refresh", "expiry_date": 1000, "_source": "ide"});
+        for _ in 0..3 {
+            assert_eq!(reconcile_snapshot_account(&mut store, creds.clone(), None), Some(json!("known")));
+            assert_eq!(store, before);
+        }
+    }
+
+    #[test]
+    fn unidentifiable_startup_snapshots_are_not_added() {
+        let mut store = saved_store();
+        let before = store.clone();
+        for email in [Value::Null, json!(""), json!("   ")] {
+            assert!(reconcile_snapshot_account(&mut store, json!({"email": email,
+                "access_token": "unknown-access", "refresh_token": "unknown-refresh"}), None).is_none());
+            assert_eq!(store, before);
+        }
+    }
+
+    #[test]
+    fn known_refresh_tokens_and_new_identities_reconcile_without_losing_metadata() {
+        let mut store = saved_store();
+        let creds = json!({"access_token": "refreshed-access", "refresh_token": "new-refresh", "expiry_date": 3000});
+        assert_eq!(reconcile_snapshot_account(&mut store, creds, None), Some(json!("known")));
+        assert_eq!(store["accounts"][0]["creds"]["email"], "demo@example.invalid");
+        assert_eq!(store["accounts"][0]["label"], "Custom label");
+        assert_eq!(store["accounts"][0]["quota"]["groups"], json!(["cached"]));
+        let known = store["accounts"][0].clone();
+        let creds = json!({"email": "another@example.invalid", "access_token": "another-access", "refresh_token": "another-refresh"});
+        assert!(reconcile_snapshot_account(&mut store, creds.clone(), None).is_some());
+        assert!(reconcile_snapshot_account(&mut store, creds, None).is_some());
+        assert_eq!(store["accounts"].as_array().unwrap().len(), 2);
+        assert_eq!(store["accounts"][0], known);
+        assert_eq!(store["current_id"], "known");
+    }
+
+    #[test]
+    fn collected_snapshots_preserve_newer_credentials_and_reject_conflicting_identities() {
+        let mut store = saved_store();
+        let fresh_creds = store["accounts"][0]["creds"].clone();
+        let old_snapshot = json!({"email": "DEMO@example.invalid", "access_token": "old-access",
+            "refresh_token": "old-refresh", "expiry_date": 1000});
+        // Add Current can set a label; switch/boot collection passes no label.
+        assert_eq!(reconcile_snapshot_account(&mut store, old_snapshot.clone(), Some("Updated label")), Some(json!("known")));
+        assert_eq!(reconcile_snapshot_account(&mut store, old_snapshot, None), Some(json!("known")));
+        assert_eq!(store["accounts"][0]["creds"], fresh_creds);
+        assert_eq!(store["accounts"][0]["email"], "demo@example.invalid");
+        assert_eq!(store["accounts"][0]["label"], "Updated label");
+        let before = store.clone();
+        let conflict = json!({"email": "other@example.invalid", "access_token": "mismatched-access",
+            "refresh_token": "new-refresh", "expiry_date": 4000});
+        assert!(reconcile_snapshot_account(&mut store, conflict, None).is_none());
+        assert_eq!(store, before);
     }
 }
 

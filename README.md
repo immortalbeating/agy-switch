@@ -6,10 +6,10 @@ Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML
 
 Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy-switch/releases/latest) 下载：
 
-- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.2/agy-switch-1.1.2-windows-x64-setup.exe)：运行安装程序，按向导完成安装
-- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.2/agy-switch-1.1.2-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
+- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.3/agy-switch-1.1.3-windows-x64-setup.exe)：运行安装程序，按向导完成安装
+- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.1.3/agy-switch-1.1.3-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
 
-当前源码版本为 **1.1.2**，变更见 [更新日志](CHANGELOG.md)。
+当前源码版本为 **1.1.3**，变更见 [更新日志](CHANGELOG.md)。
 
 首次使用可以通过「添加当前登录」收录 IDE 已有账号。浏览器 OAuth 登录和令牌续期需要本机私有客户端配置，详见下方配置说明；发布包不提供实际客户端参数。两种版本的账号库和偏好均保存在用户目录 `~/.agy-switch/`。
 
@@ -72,6 +72,7 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
 - **CLI 兼容层**：`~/.gemini/oauth_creds.json`（gemini CLI / 老工具使用）与 `~/.gemini/google_accounts.json` 的 `active` 字段，切换时一并写回
 - **账号库**：`~/.agy-switch/accounts.json`，仅存本地，无任何遥测；所有写入均为临时文件 + 原子替换
 - **注意**：IDE 刷新 token 后会重写 keyring 且不再含 `id_token`，工具按 **refresh_token**（跨刷新稳定）把 keyring 与账号库对齐；若 IDE 与 CLI 凭据不一致，界面会显示警示
+- 身份解析同时兼容外层 `id_token` 和 `token.id_token`。启动、添加当前登录及切换前的快照收录按邮箱和续期令牌关联已有账号；较旧快照不会覆盖已保存的较新登录，无法识别身份的启动快照不新建“邮箱未知”条目。备注和额度缓存随原账号保留。
 - **额度 API**（daily → sandbox → prod 回退，每个账号各自 Bearer 认证），保留官方返回的分组结构：
   - `v1internal:loadCodeAssist` — 解析项目与套餐档位（付费档位优先展示，如 Google AI Pro）
   - `v1internal:retrieveUserQuotaSummary` — 展示 Gemini、Claude / GPT 以及实际返回的 Gemini 4 Argon 等分组；按各组实际窗口显示
