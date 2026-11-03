@@ -52,7 +52,7 @@ class QuotaUITests(unittest.TestCase):
     def open_ui(self, groups, width=360, theme="light", lang="zh", error="", quota_extra=None):
         context = self.browser.new_context(
             viewport={"width": width, "height": 850}, device_scale_factor=2,
-            color_scheme=theme, reduced_motion="reduce")
+            color_scheme=theme, reduced_motion="reduce", timezone_id="Asia/Shanghai")
         self.contexts.append(context)
         context.add_init_script(
             "localStorage.setItem('agy.theme', " + json.dumps(theme) + ");"
@@ -76,6 +76,12 @@ class QuotaUITests(unittest.TestCase):
                 request.fulfill(json={"theme": theme, "lang": lang, "close_to_tray": True})
             elif path == "/api/quota":
                 request.fulfill(json=payload["accounts"][0])
+            elif path == "/api/switch":
+                account_id = request.request.post_data_json["id"]
+                payload["current_id"] = account_id
+                for item in payload["accounts"]:
+                    item["current"] = item["id"] == account_id
+                request.fulfill(json={"ok": True, "restart_needed": False})
             else:
                 request.fulfill(status=404, json={"error": "Unexpected fixture request"})
 
@@ -138,6 +144,60 @@ class QuotaUITests(unittest.TestCase):
         page.wait_for_function("document.querySelectorAll('.quota-table tbody tr').length === 3")
         self.assertEqual(page.locator(".quota-table tbody .qtitle").all_text_contents(),
                          ["Gemini", "Gemini 4 Argon", "Claude / GPT"])
+
+    def test_switch_moves_the_current_account_to_the_top_in_stable_order(self):
+        page, payload = self.open_ui(three_groups())
+        template = payload["accounts"][0]
+        labels = ["账号甲", "账号乙", "账号丙", "账号丁", "账号戊"]
+        payload["accounts"] = [dict(copy.deepcopy(template), id=str(i), label=label, current=i == 2)
+                               for i, label in enumerate(labels)]
+        payload["current_id"] = "2"
+        page.reload()
+        names = page.locator("#list .acc-name")
+        names.first.wait_for()
+        self.assertEqual(names.all_text_contents(), [labels[i] for i in (2, 0, 1, 3, 4)])
+        page.on("dialog", lambda dialog: dialog.accept())
+        page.locator("#list .acc").filter(has_text=labels[4]).locator(".btn-switch").click()
+        page.locator("#list .acc.current .acc-name").filter(has_text=labels[4]).wait_for()
+        self.assertEqual(names.all_text_contents(), [labels[i] for i in (4, 0, 1, 2, 3)])
+        self.assertEqual(page.evaluate("state.data.accounts.map(a => a.id)"), [str(i) for i in range(5)])
+        self.assertLess(page.evaluate("window.scrollY"), 1)
+
+    def test_sync_time_has_room_and_full_detail_with_pointer_and_keyboard(self):
+        for width, theme, lang in [(320, "light", "zh"), (360, "dark", "en")]:
+            with self.subTest(width=width, theme=theme, lang=lang):
+                page, payload = self.open_ui(shared_groups(), width=width, theme=theme, lang=lang,
+                    quota_extra={"fetched_at": "2026-11-03T08:30:45Z"})
+                email = "a-very-long-account-address-that-needs-ellipsis@example.invalid"
+                payload["accounts"][0]["email"] = email
+                page.reload()
+                address = page.locator(".acc-email")
+                address.wait_for()
+                self.assertEqual(address.get_attribute("title"), email)
+                self.assertTrue(address.evaluate("e => e.scrollWidth > e.clientWidth"))
+                sync = page.locator(".acc-sync")
+                detail = sync.get_by_role("tooltip", include_hidden=True)
+                self.assertIn("11-03 16:30", sync.locator("time").inner_text())
+                self.assertTrue(sync.evaluate("""e => {
+                    const time = e.querySelector('time').getBoundingClientRect();
+                    const actions = e.parentElement.querySelector('.acc-ghost-actions').getBoundingClientRect();
+                    return time.right < actions.left;
+                }"""))
+                self.assertTrue(detail.is_hidden())
+                sync.hover()
+                self.assertTrue(detail.is_visible())
+                self.assertIn("2026-11-03 16:30:45", detail.inner_text())
+                detail.hover()
+                self.assertTrue(detail.is_visible())
+                page.keyboard.press("Escape")
+                self.assertTrue(detail.is_hidden())
+                page.locator(".acc-name").hover()
+                page.locator(".btn-switch").focus()
+                page.keyboard.press("Tab")
+                self.assertTrue(sync.evaluate("e => document.activeElement === e"))
+                self.assertTrue(detail.is_visible())
+                page.keyboard.press("Escape")
+                self.assertTrue(detail.is_hidden())
 
     def test_verification_opens_only_the_official_link_and_refresh_can_recover(self):
         url = "https://accounts.google.com/v3/signin/continue?fixture=1&continue=https%3A%2F%2Fdevelopers.google.com%2F"
