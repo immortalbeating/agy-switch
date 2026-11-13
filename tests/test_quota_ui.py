@@ -44,6 +44,8 @@ class QuotaUITests(unittest.TestCase):
 
     def setUp(self):
         self.contexts = []
+        self.order_requests = []
+        self.order_failure = False
 
     def tearDown(self):
         for context in self.contexts:
@@ -83,6 +85,19 @@ class QuotaUITests(unittest.TestCase):
                 for item in payload["accounts"]:
                     item["current"] = item["id"] == account_id
                 request.fulfill(json={"ok": True, "restart_needed": False})
+            elif path == "/api/accounts/order":
+                ids = request.request.post_data_json["ids"]
+                self.order_requests.append(ids)
+                if self.order_failure:
+                    request.fulfill(status=500, json={"error": "fixture save failed"})
+                else:
+                    live = [a["id"] for a in payload["accounts"]]
+                    order = []
+                    for account_id in ids + payload.get("account_order", []) + live:
+                        if account_id in live and account_id not in order:
+                            order.append(account_id)
+                    payload["account_order"] = order
+                    request.fulfill(json={"account_order": order})
             elif path in ("/api/rename", "/api/export", "/api/delete"):
                 data = request.request.post_data_json
                 if path == "/api/rename":
@@ -199,6 +214,172 @@ class QuotaUITests(unittest.TestCase):
         self.assertEqual(page.locator('.acc[data-account-id="0"]').get_attribute('data-expanded'), 'true')
         self.assertEqual(page.evaluate("state.data.accounts.map(a => a.id)"), ["0", "1", "2"])
 
+    def prepare_order_accounts(self, page, payload, order=None):
+        template = payload["accounts"][0]
+        payload["accounts"] = [dict(copy.deepcopy(template), id=str(i), label=f"Account {i}",
+                                   email=f"account{i}@example.invalid", current=i == 2)
+                               for i in range(5)]
+        payload["current_id"] = "2"
+        if order is not None:
+            payload["account_order"] = order
+        page.reload()
+        page.locator('.acc[data-account-id="4"]').wait_for()
+
+    def card_order(self, page):
+        return page.locator('#list .acc').evaluate_all('es => es.map(e => e.dataset.accountId)')
+
+    def test_approved_card_style_and_stable_account_marks(self):
+        for theme in ("light", "dark"):
+            with self.subTest(theme=theme):
+                page, payload = self.open_ui(three_groups(), theme=theme)
+                style = page.locator('.quota-table').evaluate('''table => ({
+                    background: getComputedStyle(table.querySelector('thead th')).backgroundColor,
+                    card: getComputedStyle(table.closest('.acc')).backgroundColor,
+                    headerLine: getComputedStyle(table.querySelector('thead th')).borderBottomColor,
+                    groupLine: getComputedStyle(table.querySelector('tbody tr + tr')).borderTopColor,
+                    weekly: [...table.querySelectorAll('.qfill.week')].map(e => getComputedStyle(e).backgroundColor),
+                    fiveHour: getComputedStyle(table.querySelector('.qfill:not(.week)')).backgroundColor
+                })''')
+                self.assertNotEqual(style['background'], style['card'])
+                self.assertNotEqual(style['headerLine'], style['groupLine'])
+                self.assertEqual(len(set(style['weekly'])), 1)
+                self.assertNotEqual(style['weekly'][0], style['fiveHour'])
+                self.prepare_order_accounts(page, payload)
+                marks = page.locator('.acc-avatar').evaluate_all('es => es.map(e => e.innerHTML)')
+                self.assertEqual(len(set(marks)), 5)
+                self.assertEqual(page.locator('.acc-avatar').all_text_contents(), [''] * 5)
+                mark = page.locator('[data-account-id="4"] .acc-avatar').inner_html()
+                payload['accounts'][4]['label'] = 'Renamed account'
+                page.evaluate('loadState()')
+                page.get_by_text('Renamed account', exact=True).wait_for()
+                self.assertEqual(page.locator('[data-account-id="4"] .acc-avatar').inner_html(), mark)
+
+    def test_custom_order_survives_reload_and_switch_without_reordering_store(self):
+        page, payload = self.open_ui(three_groups())
+        self.prepare_order_accounts(page, payload, ['3', '2', '0', '4', '1'])
+        self.assertEqual(self.card_order(page), ['2', '3', '0', '4', '1'])
+        card = page.locator('[data-account-id="1"]')
+        card.locator('.acc-menu-toggle').click()
+        card.locator('[data-action="move-up"]').click()
+        page.wait_for_function("state.data.account_order.join() === '3,2,0,1,4'")
+        self.assertEqual(self.card_order(page), ['2', '3', '0', '1', '4'])
+        self.assertEqual(page.evaluate('document.activeElement.dataset.focusKey'), 'account-menu-1-toggle')
+        page.reload()
+        page.locator('[data-account-id="4"]').wait_for()
+        self.assertEqual(self.card_order(page), ['2', '3', '0', '1', '4'])
+        page.on('dialog', lambda dialog: dialog.accept())
+        page.locator('[data-account-id="0"] .btn-switch').click()
+        page.wait_for_function("document.querySelector('#list .acc').dataset.accountId === '0'")
+        self.assertEqual(self.card_order(page), ['0', '3', '2', '1', '4'])
+        self.assertEqual(payload['account_order'], ['3', '2', '0', '1', '4'])
+        self.assertEqual([a['id'] for a in payload['accounts']], list('01234'))
+
+    def test_drag_sort_and_active_pin(self):
+        page, payload = self.open_ui(three_groups(), width=520)
+        self.prepare_order_accounts(page, payload)
+        self.assertEqual(page.locator('.acc.current .order-handle').count(), 0)
+        source = page.locator('[data-account-id="4"] .order-handle')
+        source.drag_to(page.locator('[data-account-id="0"]'), target_position={"x": 80, "y": 5})
+        page.wait_for_function("state.data.account_order?.join() === '4,0,2,1,3'")
+        self.assertEqual(self.card_order(page), ['2', '4', '0', '1', '3'])
+        self.assertEqual(page.locator('.dragging,.drop-before,.drop-after').count(), 0)
+        writes = len(self.order_requests)
+        page.locator('[data-account-id="4"] .order-handle').drag_to(page.locator('.acc.current'))
+        self.assertEqual(len(self.order_requests), writes)
+        self.assertEqual(self.card_order(page), ['2', '4', '0', '1', '3'])
+
+    def test_sort_keyboard_bounds_and_failed_save(self):
+        page, payload = self.open_ui(three_groups())
+        self.prepare_order_accounts(page, payload)
+        first = page.locator('[data-account-id="0"]')
+        first.locator('.order-handle').click()
+        self.assertTrue(first.locator('[data-action="move-up"]').is_disabled())
+        page.keyboard.press('Escape')
+        grip = first.locator('.order-handle')
+        grip.focus()
+        page.keyboard.press('Alt+ArrowUp')
+        self.assertEqual(self.order_requests, [])
+        page.keyboard.press('Alt+ArrowDown')
+        page.wait_for_function("state.data.account_order?.join() === '1,0,2,3,4' && !ui.orderSaving")
+        self.assertEqual(page.evaluate('document.activeElement.dataset.focusKey'), 'order-0')
+        page.keyboard.press('Alt+ArrowDown')
+        page.wait_for_function("state.data.account_order?.join() === '1,3,2,0,4' && !ui.orderSaving")
+        self.order_failure = True
+        page.keyboard.press('Alt+ArrowDown')
+        page.wait_for_function("!ui.orderSaving && document.querySelector('#toast').textContent.includes('fixture save failed')")
+        self.assertEqual(self.card_order(page), ['2', '1', '3', '0', '4'])
+        self.assertEqual(payload['account_order'], ['1', '3', '2', '0', '4'])
+        self.assertEqual(page.locator('.order-handle:disabled').count(), 0)
+
+    def test_stale_poll_cannot_overwrite_a_completed_reorder(self):
+        page, payload = self.open_ui(three_groups())
+        self.prepare_order_accounts(page, payload)
+        held = []
+        snapshot = copy.deepcopy(payload)
+        page.route('**/api/state', lambda request: held.append(request))
+        with page.expect_request('**/api/state'):
+            page.evaluate('() => { window.oldPollDone = false; loadState().then(() => window.oldPollDone = true); }')
+        card = page.locator('[data-account-id="4"]')
+        card.locator('.acc-menu-toggle').click()
+        card.locator('[data-action="move-up"]').click()
+        page.wait_for_function("state.data.account_order?.join() === '0,1,2,4,3' && !ui.orderSaving")
+        self.assertEqual(len(held), 1)
+        held[0].fulfill(json=snapshot)
+        page.wait_for_function('window.oldPollDone')
+        self.assertEqual(self.card_order(page), ['2', '0', '1', '4', '3'])
+
+    def test_stale_preferences_keep_new_accounts_visible(self):
+        page, payload = self.open_ui(three_groups())
+        self.prepare_order_accounts(page, payload, ['deleted', '2', '2', '4'])
+        self.assertEqual(self.card_order(page), ['2', '4', '0', '1', '3'])
+        payload['accounts'] = [a for a in payload['accounts'] if a['id'] != '4']
+        payload['accounts'].append(dict(copy.deepcopy(payload['accounts'][0]), id='new', label='New account', current=False))
+        page.evaluate('loadState()')
+        page.locator('[data-account-id="new"]').wait_for()
+        self.assertEqual(self.card_order(page), ['2', '0', '1', '3', 'new'])
+
+    def test_refresh_all_old_snapshot_does_not_restore_previous_order(self):
+        page, payload = self.open_ui(three_groups())
+        self.prepare_order_accounts(page, payload)
+        held = []
+        snapshot = copy.deepcopy(payload)
+        page.route('**/api/refresh_all', lambda request: held.append(request))
+        with page.expect_request('**/api/refresh_all'):
+            page.locator('#btnRefreshAll').click()
+        card = page.locator('[data-account-id="4"]')
+        card.locator('.acc-menu-toggle').click()
+        card.locator('[data-action="move-up"]').click()
+        page.wait_for_function("state.data.account_order?.join() === '0,1,2,4,3' && !ui.orderSaving")
+        held[0].fulfill(json=snapshot)
+        page.wait_for_function("!document.querySelector('#btnRefreshAll').disabled")
+        self.assertEqual(self.card_order(page), ['2', '0', '1', '4', '3'])
+        self.assertEqual(payload['account_order'], ['0', '1', '2', '4', '3'])
+
+    def test_oauth_poll_old_snapshot_does_not_restore_previous_order(self):
+        page, payload = self.open_ui(three_groups())
+        self.prepare_order_accounts(page, payload)
+        held = []
+        snapshot = copy.deepcopy(payload)
+        page.route('**/api/state', lambda request: held.append(request))
+        page.route('**/api/oauth_start', lambda request: request.fulfill(json={'auth_url': 'https://example.invalid/fixture-oauth'}))
+        page.evaluate('''() => {
+            window.__TAURI__ = {opener: {openUrl: async () => {}}};
+            window.setInterval = fn => { window.fixtureOAuthTick = fn; return 123456; };
+        }''')
+        page.locator('#btnAddMenu').click()
+        page.locator('#btnOauth').click()
+        page.wait_for_function('typeof window.fixtureOAuthTick === "function"')
+        with page.expect_request('**/api/state'):
+            page.evaluate('() => { window.oauthTickDone = false; window.fixtureOAuthTick().then(() => window.oauthTickDone = true); }')
+        card = page.locator('[data-account-id="4"]')
+        card.locator('.acc-menu-toggle').click()
+        card.locator('[data-action="move-up"]').click()
+        page.wait_for_function("state.data.account_order?.join() === '0,1,2,4,3' && !ui.orderSaving")
+        held[0].fulfill(json=snapshot)
+        page.wait_for_function('window.oauthTickDone')
+        self.assertEqual(self.card_order(page), ['2', '0', '1', '4', '3'])
+        self.assertEqual(payload['account_order'], ['0', '1', '2', '4', '3'])
+
     def test_collapsed_summary_uses_real_pools_and_expands(self):
         groups = [{"name": "Carbon", "buckets": [bucket("5h", 17)]},
                   {"name": "Unknown Pool", "buckets": [bucket("week", 31)]},
@@ -265,7 +446,7 @@ class QuotaUITests(unittest.TestCase):
                 self.assertEqual(page.evaluate('document.activeElement.id'), 'btnAddMenu')
 
     def test_demo_screenshots(self):
-        output = Path(__file__).resolve().parents[1] / '.ref' / 'compact-cards-v1.2.0'
+        output = Path(__file__).resolve().parents[1] / '.ref' / 'account-order-v1.3.0'
         output.mkdir(parents=True, exist_ok=True)
         groups = [{"name": "Carbon", "buckets": [bucket("5h", 17)]},
                   {"name": "Unknown Pool", "buckets": [bucket("week", 31)]},

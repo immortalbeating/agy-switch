@@ -152,10 +152,50 @@ fn load_prefs() -> Value {
     read_json(&prefs_file()).unwrap_or_else(|| json!({}))
 }
 
-fn save_prefs_key(key: &str, v: Value) {
+fn prefs_lock() -> &'static Mutex<()> {
+    static L: OnceLock<Mutex<()>> = OnceLock::new();
+    L.get_or_init(|| Mutex::new(()))
+}
+
+fn save_prefs_key_result(key: &str, v: Value) -> Result<(), String> {
+    let _guard = prefs_lock().lock().unwrap_or_else(|e| e.into_inner());
     let mut p = load_prefs();
+    if !p.is_object() { p = json!({}); }
     p[key] = v;
-    let _ = atomic_write_json(&prefs_file(), &p);
+    atomic_write_json(&prefs_file(), &p)
+}
+
+fn save_prefs_key(key: &str, v: Value) {
+    let _ = save_prefs_key_result(key, v);
+}
+
+fn normalize_account_order(store: &Value, requested: &Value, preferred: &Value) -> Vec<String> {
+    let live: Vec<String> = store["accounts"].as_array().into_iter().flatten()
+        .filter_map(|a| a["id"].as_str()).filter(|id| !id.is_empty())
+        .map(str::to_owned).collect();
+    let mut result = Vec::new();
+    for id in requested.as_array().into_iter().flatten()
+        .chain(preferred.as_array().into_iter().flatten())
+        .filter_map(Value::as_str).chain(live.iter().map(String::as_str)) {
+        if live.iter().any(|v| v == id) && !result.iter().any(|v| v == id) {
+            result.push(id.to_owned());
+        }
+    }
+    result
+}
+
+fn save_account_order_at(path: &Path, store: &Value, requested: &Value) -> Result<Vec<String>, String> {
+    let _guard = prefs_lock().lock().unwrap_or_else(|e| e.into_inner());
+    let mut p = read_json(path).unwrap_or_else(|| json!({}));
+    if !p.is_object() { p = json!({}); }
+    let order = normalize_account_order(store, requested, &p["account_order"]);
+    p["account_order"] = json!(order);
+    atomic_write_json(path, &p)?;
+    Ok(order)
+}
+
+fn save_account_order(store: &Value, requested: &Value) -> Result<Vec<String>, String> {
+    save_account_order_at(&prefs_file(), store, requested)
 }
 
 fn store_lock() -> &'static Mutex<()> {
@@ -187,7 +227,13 @@ fn build_tray_menu(app: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<ta
     let sub = Submenu::with_id(app, "accounts", s_switch, true)?;
     let store = load_store();
     let current_id = store.get("current_id").and_then(|v| v.as_str()).unwrap_or("");
-    for acc in store["accounts"].as_array().cloned().unwrap_or_default() {
+    let mut accounts = store["accounts"].as_array().cloned().unwrap_or_default();
+    let order = normalize_account_order(&store, &Value::Null, &load_prefs()["account_order"]);
+    accounts.sort_by_key(|acc| {
+        let id = acc["id"].as_str().unwrap_or("");
+        (id != current_id, order.iter().position(|v| v == id).unwrap_or(usize::MAX))
+    });
+    for acc in accounts {
         let id = acc["id"].as_str().unwrap_or("").to_string();
         let name = acc["label"].as_str().unwrap_or("").to_string();
         if id.is_empty() {
@@ -1010,7 +1056,7 @@ fn state_view() -> Value {
         return json!({
             "live_email": null, "ide_email": null, "creds_email": null,
             "ide_running": false, "ide_path": "", "creds_path": "",
-            "current_id": null, "accounts": [],
+            "current_id": null, "accounts": [], "account_order": [],
         });
     }
     let store = load_store();
@@ -1044,6 +1090,7 @@ fn state_view() -> Value {
         "ide_path": find_ide_exe().map(|p| p.to_string_lossy().to_string()).unwrap_or_default(),
         "creds_path": live_creds().to_string_lossy(),
         "current_id": if current_id.is_empty() { Value::Null } else { json!(current_id) },
+        "account_order": normalize_account_order(&store, &Value::Null, &load_prefs()["account_order"]),
         "accounts": store["accounts"]
             .as_array()
             .map(|a| a.iter().map(|acc| account_view(acc, &current_id)).collect::<Vec<_>>())
@@ -1327,6 +1374,22 @@ fn route(method: &Method, path: &str, url: &str, body: &Value) -> (u16, String) 
         },
         // ---------- 查询 ----------
         (Method::Get, "/api/state") => json_resp(200, &state_view()),
+        (Method::Post, "/api/accounts/order") => {
+            let Some(ids) = body.get("ids").and_then(Value::as_array) else {
+                return err_resp(400, "ids must be an array of strings");
+            };
+            if ids.iter().any(|v| !v.is_string()) {
+                return err_resp(400, "ids must be an array of strings");
+            }
+            let store = load_store();
+            match save_account_order(&store, &json!(ids)) {
+                Ok(order) => {
+                    refresh_tray();
+                    json_resp(200, &json!({"account_order": order}))
+                }
+                Err(e) => err_resp(500, &e),
+            }
+        },
         (Method::Get, "/api/quota") => {
             let query = url.split_once('?').map(|(_, q)| q).unwrap_or("");
             let id = parse_query(query).get("id").cloned().unwrap_or_default();
@@ -1754,6 +1817,7 @@ fn main() {
             let url = tauri::Url::parse(&server_url).expect("server url");
             let check_url = server_url.clone();
             let mut builder = tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::External(url))
+                .disable_drag_drop_handler()
                 .title("AGY·SWITCH")
                 .inner_size(w, h)
                 .min_inner_size(360.0, 520.0)
@@ -2123,5 +2187,42 @@ mod oauth_config_tests {
         assert!(select_login_client(&partial).is_err());
         let complete = select_oauth_clients(&config, |_| None);
         assert_eq!(select_login_client(&complete).unwrap().key, "antigravity");
+    }
+}
+
+#[cfg(test)]
+mod account_order_tests {
+    use super::*;
+
+    #[test]
+    fn persists_order_without_changing_other_data_and_reports_failure() {
+        let dir = std::env::temp_dir().join(format!("agy-order-test-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir(&dir).unwrap();
+        let prefs = dir.join("prefs.json");
+        let store_path = dir.join("accounts.json");
+        let store = json!({"current_id": "a", "accounts": [{"id":"a"}, {"id":"b"}, {"id":"c"}]});
+        atomic_write_json(&store_path, &store).unwrap();
+        let before = std::fs::read(&store_path).unwrap();
+        atomic_write_json(&prefs, &json!({"theme":"dark", "lang":"en", "account_order":["c", "a", "old"]})).unwrap();
+        assert_eq!(save_account_order_at(&prefs, &store, &json!(["b", "b", "unknown"])).unwrap(), vec!["b", "c", "a"]);
+        assert_eq!(read_json(&prefs).unwrap(), json!({"theme":"dark", "lang":"en", "account_order":["b", "c", "a"]}));
+        assert_eq!(std::fs::read(&store_path).unwrap(), before);
+
+        // A file cannot be a parent directory, including when running with elevated privileges.
+        assert!(save_account_order_at(&store_path.join("prefs.json"), &store, &json!(["a"])).is_err());
+        assert_eq!(std::fs::read(&store_path).unwrap(), before);
+        assert_eq!(read_json(&prefs).unwrap()["account_order"], json!(["b", "c", "a"]));
+
+        atomic_write_json(&prefs, &json!(["invalid prefs object"])).unwrap();
+        assert_eq!(save_account_order_at(&prefs, &store, &json!(["c"])).unwrap(), vec!["c", "a", "b"]);
+        assert_eq!(read_json(&prefs).unwrap(), json!({"account_order":["c", "a", "b"]}));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn normalizes_requested_then_preferred_then_live() {
+        let store = json!({"accounts": [{"id":"a"}, {"id":"b"}, {"id":"c"}, {"id":"d"}]});
+        assert_eq!(normalize_account_order(&store, &json!(["b", "stale", "b"]), &json!(["c", "a", "deleted"])), vec!["b", "c", "a", "d"]);
+        assert_eq!(normalize_account_order(&store, &Value::Null, &json!(["c", "a"])), vec!["c", "a", "b", "d"]);
     }
 }

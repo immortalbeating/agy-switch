@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 HOME = Path.home()
 GEMINI_DIR = HOME / ".gemini"
 LIVE_CREDS = GEMINI_DIR / "oauth_creds.json"
@@ -40,6 +40,7 @@ LEGACY_CREDS = HOME / ".antigravity" / "oauth_creds.json"
 
 STORE_DIR = HOME / ".agy-switch"
 STORE_FILE = STORE_DIR / "accounts.json"
+PREFS_FILE = STORE_DIR / "prefs.json"
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
 
@@ -153,6 +154,24 @@ def load_store():
 
 def save_store(store):
     _atomic_write(STORE_FILE, store)
+
+
+def load_prefs():
+    try:
+        prefs = json.loads(PREFS_FILE.read_text(encoding="utf-8"))
+        return prefs if isinstance(prefs, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def normalize_account_order(store, requested, preferred):
+    live = [a.get("id") for a in store.get("accounts", [])
+            if isinstance(a.get("id"), str) and a.get("id")]
+    result = []
+    for account_id in (requested if isinstance(requested, list) else []) + (preferred if isinstance(preferred, list) else []) + live:
+        if isinstance(account_id, str) and account_id in live and account_id not in result:
+            result.append(account_id)
+    return result
 
 
 def read_live_creds():
@@ -768,6 +787,16 @@ class Handler(BaseHTTPRequestHandler):
         with _LOCK:
             store = load_store()
             try:
+                if path == "/api/accounts/order":
+                    ids = body.get("ids") if isinstance(body, dict) else None
+                    if not isinstance(ids, list) or any(not isinstance(i, str) for i in ids):
+                        return self._json({"error": "ids must be an array of strings"}, 400)
+                    prefs = load_prefs()
+                    order = normalize_account_order(store, ids, prefs.get("account_order"))
+                    prefs["account_order"] = order
+                    _atomic_write(PREFS_FILE, prefs)
+                    return self._json({"account_order": order})
+
                 if path == "/api/add":
                     creds = read_live_creds()
                     if not creds:
@@ -857,6 +886,7 @@ class Handler(BaseHTTPRequestHandler):
             "creds_path": str(LIVE_CREDS),
             "current_id": current_id,
             "accounts": [account_view(a, current_id) for a in store["accounts"]],
+            "account_order": normalize_account_order(store, None, load_prefs().get("account_order")),
         }
 
 
