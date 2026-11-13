@@ -228,6 +228,9 @@ class QuotaUITests(unittest.TestCase):
     def card_order(self, page):
         return page.locator('#list .acc').evaluate_all('es => es.map(e => e.dataset.accountId)')
 
+    def order_handle(self, page, account_id):
+        return page.locator(f'.acc-row:has(> .acc[data-account-id="{account_id}"]) > .order-handle')
+
     def test_approved_card_style_and_stable_account_marks(self):
         for theme in ("light", "dark"):
             with self.subTest(theme=theme):
@@ -277,14 +280,14 @@ class QuotaUITests(unittest.TestCase):
     def test_drag_sort_and_active_pin(self):
         page, payload = self.open_ui(three_groups(), width=520)
         self.prepare_order_accounts(page, payload)
-        self.assertEqual(page.locator('.acc.current .order-handle').count(), 0)
-        source = page.locator('[data-account-id="4"] .order-handle')
+        self.assertEqual(page.locator('.acc-row:has(> .acc.current) > .order-handle').count(), 0)
+        source = self.order_handle(page, '4')
         source.drag_to(page.locator('[data-account-id="0"]'), target_position={"x": 80, "y": 5})
         page.wait_for_function("state.data.account_order?.join() === '4,0,2,1,3'")
         self.assertEqual(self.card_order(page), ['2', '4', '0', '1', '3'])
         self.assertEqual(page.locator('.dragging,.drop-before,.drop-after').count(), 0)
         writes = len(self.order_requests)
-        page.locator('[data-account-id="4"] .order-handle').drag_to(page.locator('.acc.current'))
+        self.order_handle(page, '4').drag_to(page.locator('.acc.current'))
         self.assertEqual(len(self.order_requests), writes)
         self.assertEqual(self.card_order(page), ['2', '4', '0', '1', '3'])
 
@@ -292,10 +295,10 @@ class QuotaUITests(unittest.TestCase):
         page, payload = self.open_ui(three_groups())
         self.prepare_order_accounts(page, payload)
         first = page.locator('[data-account-id="0"]')
-        first.locator('.order-handle').click()
+        self.order_handle(page, '0').click()
         self.assertTrue(first.locator('[data-action="move-up"]').is_disabled())
         page.keyboard.press('Escape')
-        grip = first.locator('.order-handle')
+        grip = self.order_handle(page, '0')
         grip.focus()
         page.keyboard.press('Alt+ArrowUp')
         self.assertEqual(self.order_requests, [])
@@ -354,6 +357,52 @@ class QuotaUITests(unittest.TestCase):
         page.wait_for_function("!document.querySelector('#btnRefreshAll').disabled")
         self.assertEqual(self.card_order(page), ['2', '0', '1', '4', '3'])
         self.assertEqual(payload['account_order'], ['0', '1', '2', '4', '3'])
+
+    def test_leading_handle_and_compact_collapsed_card(self):
+        for width in (320, 360, 520):
+            with self.subTest(width=width):
+                page, payload = self.open_ui(shared_groups(), width=width)
+                self.prepare_order_accounts(page, payload)
+                account = payload['accounts'][0]
+                account['label'] = account['email']
+                page.reload()
+                card = page.locator('[data-account-id="0"]')
+                card.wait_for()
+                self.assertEqual(card.locator('.order-handle').count(), 0)
+                self.assertEqual(card.locator('.acc-ghost-actions button:visible').count(), 2)
+                handle = self.order_handle(page, '0').bounding_box()
+                bounds = card.bounding_box()
+                self.assertLessEqual(handle['x'] + handle['width'], bounds['x'] - 1)
+                self.assertLessEqual(bounds['height'], 114)
+                self.assertLessEqual(card.evaluate('e => e.scrollWidth - e.clientWidth'), 1)
+                spacing = card.evaluate('''e => {
+                    const sub = e.querySelector('.acc-subline').getBoundingClientRect();
+                    const footer = e.querySelector('.acc-footer').getBoundingClientRect();
+                    return {gap: footer.top - sub.bottom, bottom: e.getBoundingClientRect().bottom - footer.bottom};
+                }''')
+                self.assertLessEqual(spacing['gap'], 1)
+                self.assertLessEqual(spacing['bottom'], 10)
+                card.locator('.acc-expand').click()
+                overflow = card.locator('.quota-table td:not(.qmissing)').evaluate_all('''cells => cells.some(e => {
+                    const time = e.querySelector('.qreset').getBoundingClientRect();
+                    const pct = e.querySelector('.qpct').getBoundingClientRect();
+                    return time.right + 3 > pct.left || pct.right > e.getBoundingClientRect().right + 1;
+                })''')
+                self.assertFalse(overflow)
+
+    def test_account_marks_have_different_main_shapes_and_header_has_visible_gray(self):
+        page, _ = self.open_ui(three_groups())
+        result = page.evaluate('''() => {
+            const root = document.createElement('div');
+            root.innerHTML = Array.from({length: 64}, (_, i) => accountMark('sample-' + i)).join('');
+            const families = [...new Set([...root.querySelectorAll('svg')].map(e => e.dataset.markFamily))];
+            const shapes = [...new Set([...root.querySelectorAll('svg')].map(e => e.innerHTML))];
+            return {families: families.length, shapes: shapes.length,
+                    header: getComputedStyle(document.querySelector('.quota-table thead th')).backgroundColor};
+        }''')
+        self.assertEqual(result['families'], 16)
+        self.assertEqual(result['shapes'], 16)
+        self.assertEqual(result['header'], 'rgb(233, 237, 242)')
 
     def test_oauth_poll_old_snapshot_does_not_restore_previous_order(self):
         page, payload = self.open_ui(three_groups())
@@ -446,7 +495,7 @@ class QuotaUITests(unittest.TestCase):
                 self.assertEqual(page.evaluate('document.activeElement.id'), 'btnAddMenu')
 
     def test_demo_screenshots(self):
-        output = Path(__file__).resolve().parents[1] / '.ref' / 'account-order-v1.3.0'
+        output = Path(__file__).resolve().parents[1] / '.ref' / 'account-polish-v1.3.1'
         output.mkdir(parents=True, exist_ok=True)
         groups = [{"name": "Carbon", "buckets": [bucket("5h", 17)]},
                   {"name": "Unknown Pool", "buckets": [bucket("week", 31)]},

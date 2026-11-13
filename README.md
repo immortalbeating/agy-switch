@@ -6,10 +6,10 @@ Antigravity 账号切换 + 额度监控的桌面工具。前端为单文件 HTML
 
 Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy-switch/releases/latest) 下载：
 
-- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.3.0/agy-switch-1.3.0-windows-x64-setup.exe)：运行安装程序，按向导完成安装
-- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.3.0/agy-switch-1.3.0-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
+- [安装版](https://github.com/immortalbeating/agy-switch/releases/download/v1.3.1/agy-switch-1.3.1-windows-x64-setup.exe)：运行安装程序，按向导完成安装
+- [便携版](https://github.com/immortalbeating/agy-switch/releases/download/v1.3.1/agy-switch-1.3.1-windows-x64-portable.zip)：解压后运行 `agy-switch.exe`，无需安装
 
-当前源码版本为 **1.3.0**，变更见 [更新日志](CHANGELOG.md)。
+当前源码版本为 **1.3.1**，变更见 [更新日志](CHANGELOG.md)。
 
 首次使用可以通过「添加当前登录」收录 IDE 已有账号。浏览器 OAuth 登录和令牌续期需要本机私有客户端配置，详见下方配置说明；发布包不提供实际客户端参数。两种版本的账号库和偏好均保存在用户目录 `~/.agy-switch/`。
 
@@ -20,8 +20,8 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
 - 设置中可选择浅色、深色或跟随系统主题，选择保存在本地
 - 深色主题使用橙金边框标记当前账号，普通账号保留清晰灰边；浅色卡片使用白底细绿边，移除绿色铺底和光晕
 - 当前账号置顶并默认展开，其他账号默认收起；切换成功后新账号展开并回到顶部。手动展开、收起的状态在自动刷新时保留。
-- 非当前账号可拖动右侧六点按钮排序，也可通过账号更多菜单中的「上移 / 下移」调整。顺序保存在本地偏好中，重启后保留；切换账号只改变置顶显示，原账号回到它的偏好位置。
-- 账号使用固定的圆弧几何标识，重命名后图案保持一致；额度表保留灰底表头，组间横线更清晰，正常余量使用 5 小时绿色、本周蓝色。
+- 非当前账号可拖动卡片左侧前沿的六点按钮排序，也可通过账号更多菜单中的「上移 / 下移」调整。顺序保存在本地偏好中，重启后保留；切换账号只改变置顶显示，原账号回到它的偏好位置。
+- 账号使用主形状与配色不同的固定几何标识，重命名后保持一致；额度表保留清晰灰底表头，正常余量使用 5 小时绿色、本周蓝色。收起卡片的摘要和底部留白进一步压缩。
 - 收起卡片最多展示三项真实额度池摘要及其时间窗口，其余分组通过「+N」或「展开额度」查看；Carbon 等新增分组按接口实际返回展示，不预填不存在的额度。
 - 同步时间单独显示，悬停或按 Tab 聚焦可查看完整日期和秒数；默认备注与邮箱相同时只显示一次邮箱。
 
@@ -34,7 +34,7 @@ Windows x64 可直接从 [GitHub Release](https://github.com/immortalbeating/agy
 | 顶部更多 → 启动/关闭 Antigravity | 根据运行状态显示相应操作 |
 | 顶部更多 → 重启 Antigravity | 切换后需重启 IDE 生效；可在设置中勾选"切换后自动重启" |
 | 账号更多 → 重命名 | 修改账号备注（默认备注为邮箱） |
-| 拖动账号右侧六点按钮 | 调整非当前账号顺序；当前账号固定置顶 |
+| 拖动卡片左侧六点按钮 | 调整非当前账号顺序；当前账号固定置顶 |
 | 账号更多 → 上移 / 下移 | 精确调整顺序；聚焦排序按钮时也可用 Alt+↑ / ↓ |
 | 账号更多 → 导出凭据 | 原生"另存为"对话框，导出该账号的 oauth_creds.json |
 | 添加账号 → 导入凭据 | 粘贴其他机器导出的 `oauth_creds.json` 内容 |

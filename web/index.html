@@ -57,6 +57,7 @@
   --active-card-bg: #ffffff;
   --active-glow: none;
   --quota-bg: #f8fafc;
+  --quota-heading-bg: #e9edf2;
   --quota-border: #f1f5f9;
   --quota-row-border: #c4cedc;
   --quota-track: #e2e8f0;
@@ -111,6 +112,7 @@
   --active-card-bg: #1c2028;
   --active-glow: none;
   --quota-bg: #14171d;
+  --quota-heading-bg: #2c3441;
   --quota-border: #343c4a;
   --quota-row-border: #536174;
   --quota-track: #353d4a;
@@ -458,6 +460,7 @@ button:disabled {
 }
 
 /* ---------- 精简卡片：当前展开，其余按需查看 ---------- */
+.acc-row { position: relative; padding-left: 20px; }
 .acc {
   position: relative;
   border: 1px solid var(--account-border);
@@ -481,6 +484,10 @@ button:disabled {
   box-shadow: var(--active-glow);
   padding: 11px;
 }
+.acc[data-expanded="false"] { padding-bottom: 8px; }
+.acc[data-expanded="false"] .acc-subline { margin-top: 4px; }
+.acc[data-expanded="false"] .acc-footer { margin-top: 0; align-items: center; }
+.acc[data-expanded="false"] .quota-summary { padding-top: 0; }
 
 /* 卡片顶部行：头像、名称、标签、切换触点 */
 .acc-top {
@@ -509,7 +516,9 @@ button:disabled {
   justify-content: center;
   flex-shrink: 0;
 }
-.acc-avatar svg { width: 100%; height: 100%; }
+.acc-avatar svg { width: 100%; height: 100%; color: var(--mark-light, var(--avatar-ink)); }
+[data-theme="dark"] .acc-avatar svg { color: var(--mark-dark, var(--avatar-ink)); }
+.acc-row > .order-handle { position: absolute; top: 12px; left: -2px; width: 20px; height: 28px; }
 .order-handle { cursor: grab; }
 .order-handle:active { cursor: grabbing; }
 .acc.dragging { opacity: .5; }
@@ -767,6 +776,9 @@ button:disabled {
   table-layout: fixed;
   border-collapse: collapse;
 }
+@media (max-width: 350px) {
+  .quota-table[data-window-count="2"] { --quota-model-width: 26%; --quota-window-width: 37%; }
+}
 
 .quota-table caption {
   position: absolute;
@@ -785,7 +797,7 @@ button:disabled {
   font-weight: 500;
   text-align: right;
   overflow-wrap: anywhere;
-  background: var(--quota-bg);
+  background: var(--quota-heading-bg);
 }
 
 .quota-table thead th:first-child {
@@ -1190,7 +1202,7 @@ dialog .hint {
       <div class="brand">
         <img src="data:image/png;base64,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" class="brand-img" alt="AGY Logo">
         <span>AGY·SWITCH</span>
-        <span class="ver">v1.3.0</span>
+        <span class="ver">v1.3.1</span>
       </div>
       <div class="top-right">
         <div class="live-pill" id="ideDot"><i></i><span>检测中…</span></div>
@@ -1352,7 +1364,7 @@ dialog .hint {
   </div>
 
   <div class="about-card">
-    <div class="about-title">AGY·SWITCH v1.3.0</div>
+    <div class="about-title">AGY·SWITCH v1.3.1</div>
     <div class="about-note" data-i18n="aboutLocal">数据仅存本地 ~/.agy-switch/，零遥测，保护隐私</div>
   </div>
 
@@ -1752,7 +1764,7 @@ function quotaHtml(q) {
     .filter(w => presentWindows.includes(w));
   const labels = { week: t("week"), "5h": t("fiveHour") };
   const groupWidth = windows.length === 1 ? 58 : 30;
-  const columns = `<col style="width:${groupWidth}%">` + windows.map(() => `<col style="width:${(100 - groupWidth) / windows.length}%">`).join("");
+  const columns = `<col style="width:var(--quota-model-width,${groupWidth}%)">` + windows.map(() => `<col style="width:var(--quota-window-width,${(100 - groupWidth) / windows.length}%)">`).join("");
   const header = `<thead><tr><th scope="col">${esc(t("quotaGroup"))}</th>`
     + windows.map(w => `<th scope="col">${esc(labels[w] || w)}</th>`).join("") + `</tr></thead>`;
   const rows = groups.map(g => {
@@ -1781,7 +1793,7 @@ function quotaHtml(q) {
     }).join("");
     return `<tr><th scope="row" class="qtitle">${esc(name)}</th>${cells}</tr>`;
   }).join("");
-  return `<div class="quota-grid"><table class="quota-table"><caption>${esc(t("quotaRemaining"))}</caption><colgroup>${columns}</colgroup>${header}<tbody>${rows}</tbody></table></div>`;
+  return `<div class="quota-grid"><table class="quota-table" data-window-count="${windows.length}"><caption>${esc(t("quotaRemaining"))}</caption><colgroup>${columns}</colgroup>${header}<tbody>${rows}</tbody></table></div>`;
 }
 
 function parseTier(a) {
@@ -1827,20 +1839,32 @@ const icon = name => `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" st
 function accountMark(id) {
   let seed = 2166136261;
   for (const c of String(id)) seed = Math.imul(seed ^ c.codePointAt(0), 16777619) >>> 0;
-  const start = seed % 24 * 15;
-  const span = 170 + (seed >>> 5) % 5 * 20;
-  const point = (angle, radius = 7.2) => {
-    const rad = angle * Math.PI / 180;
-    return [12 + Math.cos(rad) * radius, 12 + Math.sin(rad) * radius];
-  };
-  const [sx, sy] = point(start), [ex, ey] = point(start + span);
-  const gap = 360 - span;
-  const [dx, dy] = point(start + span + gap * .37);
-  const angle = (start + span + gap * .76) * Math.PI / 180;
-  const [lx, ly] = point(start + span + gap * .76);
-  const tx = Math.sin(angle) * 1.4, ty = -Math.cos(angle) * 1.4;
-  const n = value => value.toFixed(2);
-  return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M${n(sx)} ${n(sy)} A7.2 7.2 0 ${span > 180 ? 1 : 0} 1 ${n(ex)} ${n(ey)}"/><circle cx="${n(dx)}" cy="${n(dy)}" r="1.35" fill="currentColor" stroke="none"/><path d="M${n(lx - tx)} ${n(ly - ty)} L${n(lx + tx)} ${n(ly + ty)}"/></svg>`;
+  // 主形状、实心/空心组合和配色都参与辨认，不只旋转同一个轮廓。
+  const forms = [
+    '<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>',
+    '<path d="m12 4 7 8-7 8-7-8Z"/><path d="m12 8 3.5 4-3.5 4Z" fill="currentColor" stroke="none"/>',
+    '<path d="m12 5 8 14H4Z"/><path d="M9 15h6"/>',
+    '<circle cx="9" cy="10" r="4.4"/><circle cx="15.5" cy="15" r="3.6" fill="currentColor" stroke="none"/>',
+    '<rect x="5" y="9" width="14" height="7" rx="3.5"/><circle cx="16.5" cy="5.5" r="1.5" fill="currentColor" stroke="none"/>',
+    '<path d="m12 4 7 4v8l-7 4-7-4V8Z"/><path d="m12 4 7 4v8l-7 4Z" fill="currentColor" stroke="none"/>',
+    '<path d="M5 18C4 9 10 4 19 5c1 9-5 14-14 13Z"/><path d="m7 16 9-9"/>',
+    '<path d="M4 8q4-5 8 0t8 0M4 13q4-5 8 0t8 0M4 18q4-5 8 0t8 0"/>',
+    '<path d="M5 19V11a7 7 0 0 1 14 0v8M9 19v-8a3 3 0 0 1 6 0v8"/>',
+    '<ellipse cx="12" cy="12" rx="8" ry="3.5" transform="rotate(-35 12 12)"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>',
+    '<path d="M5 18V5a13 13 0 0 1 13 13ZM8 18h11"/><path d="M5 5v13h13" fill="currentColor" fill-opacity=".3" stroke="none"/>',
+    '<circle cx="12" cy="6.5" r="2.8" fill="currentColor" stroke="none"/><circle cx="6.5" cy="16" r="3.2"/><circle cx="17.5" cy="16" r="3.2"/>',
+    '<path d="m5 8 7-4 7 4-7 12Z"/><path d="M5 8h14m-7-4v16"/>',
+    '<path d="m9 6-5 6 5 6m6-12 5 6-5 6"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+    '<path d="M15 4a8 8 0 1 0 0 16c-5-3-5-13 0-16Z" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="2"/>',
+    '<rect x="5" y="10" width="3" height="9" rx="1.5" fill="currentColor" stroke="none"/><rect x="10.5" y="5" width="3" height="14" rx="1.5" fill="currentColor" stroke="none"/><rect x="16" y="8" width="3" height="11" rx="1.5" fill="currentColor" stroke="none"/>'
+  ];
+  const tones = [["#5276a8", "#a5c3f5"], ["#317b76", "#82c7bb"], ["#987139", "#e0bd82"], ["#7563a0", "#c1a6ec"], ["#a85d7b", "#e3a4bf"], ["#5c7186", "#a9bfd4"]];
+  const family = seed % forms.length, tone = (seed >>> 8) % tones.length;
+  return `<svg aria-hidden="true" data-mark-family="${family}" data-mark-tone="${tone}" style="--mark-light:${tones[tone][0]};--mark-dark:${tones[tone][1]}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${forms[family]}</svg>`;
+}
+
+function controlCard(element) {
+  return element.closest?.(".acc") || element.closest?.(".acc-row")?.querySelector(".acc");
 }
 
 // 排序偏好与当前账号置顶分开：切换账号不会改写其原来的位置。
@@ -1936,16 +1960,16 @@ function accCard(a) {
   const grip = a.current ? "" : `<button class="btn-ghost order-handle" data-action="reorder" data-focus-key="order-${esc(id)}" draggable="${!ui.orderSaving}" ${ui.orderSaving ? "disabled" : ""} aria-label="${esc(t("reorderAccount"))}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="${esc(t("dragOrder"))}">${icon("grip")}</button>`;
   const menuItems = [["refresh", "refreshTitle"], ["rename", "renameAction"], ["export", "exportTitle"], ["delete", "delTitle"]]
     .map(([action, key]) => `<button class="menu-item ${action === "delete" ? "danger" : ""}" role="menuitem" tabindex="-1" data-action="${action}" data-focus-key="${action}-${esc(id)}">${icon(action)}<span>${esc(t(key))}</span></button>`).join("");
-  return `<div class="acc ${a.current ? "current" : ""}" data-account-id="${esc(id)}" data-expanded="${expanded}" style="--notch:${esc(a.notch || "#3b82f6")}">
+  return `<div class="acc-row">${grip}<div class="acc ${a.current ? "current" : ""}" data-account-id="${esc(id)}" data-expanded="${expanded}" style="--notch:${esc(a.notch || "#3b82f6")}">
     <div class="acc-top"><div class="acc-title-wrap"><div class="acc-avatar" aria-hidden="true">${accountMark(id)}</div><span class="acc-name" data-id="${esc(id)}" data-label="${esc(a.label || "")}" title="${esc(name + " · " + t("renameTitle"))}">${esc(name)}</span>${plan}</div><div class="acc-status-box">${status}</div></div>
     <div class="acc-subline">
       ${showEmail ? `<div class="acc-email" title="${esc(email || t("noEmail"))}">${esc(email || t("noEmail"))}</div>` : ""}
       ${sync}
-      <div class="acc-ghost-actions">${grip}<button class="btn-ghost acc-refresh" data-action="refresh" data-focus-key="quick-refresh-${esc(id)}" title="${esc(t("refreshTitle"))}" aria-label="${esc(t("refreshTitle"))}">${icon("refresh")}</button><div class="menu-wrap"><button class="btn-ghost acc-menu-toggle" data-menu-toggle="${esc(menuId)}" data-focus-key="${esc(menuId)}-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="${esc(menuId)}" title="${esc(t("moreActions"))}" aria-label="${esc(t("moreActions"))}">${icon("more")}</button><div class="action-menu" id="${esc(menuId)}" role="menu" hidden>${ordering}${menuItems}</div></div></div>
+      <div class="acc-ghost-actions"><button class="btn-ghost acc-refresh" data-action="refresh" data-focus-key="quick-refresh-${esc(id)}" title="${esc(t("refreshTitle"))}" aria-label="${esc(t("refreshTitle"))}">${icon("refresh")}</button><div class="menu-wrap"><button class="btn-ghost acc-menu-toggle" data-menu-toggle="${esc(menuId)}" data-focus-key="${esc(menuId)}-toggle" aria-haspopup="menu" aria-expanded="false" aria-controls="${esc(menuId)}" title="${esc(t("moreActions"))}" aria-label="${esc(t("moreActions"))}">${icon("more")}</button><div class="action-menu" id="${esc(menuId)}" role="menu" hidden>${ordering}${menuItems}</div></div></div>
     </div>
     <div class="acc-details" id="quota-${esc(id)}" ${expanded ? "" : "hidden"}>${quotaHtml(a.quota)}</div>
     <div class="acc-footer"><div class="quota-summary" ${expanded ? "hidden" : ""}>${summaryHtml(a.quota)}</div><button class="acc-expand" data-action="expand" data-focus-key="expand-${esc(id)}" aria-expanded="${expanded}" aria-controls="quota-${esc(id)}"><span>${esc(t(expanded ? "collapseQuota" : "expandQuota"))}</span>${icon("down")}</button></div>
-  </div>`;
+  </div></div>`;
 }
 
 function render(focusKey) {
@@ -2010,7 +2034,7 @@ document.addEventListener("click", event => {
   }
   const action = event.target.closest("button[data-action]");
   if (action) {
-    const card = action.closest(".acc");
+    const card = controlCard(action);
     const id = card?.dataset.accountId;
     if (!id) return;
     if (action.dataset.action === "expand") {
@@ -2046,7 +2070,7 @@ document.addEventListener("keydown", event => {
   const grip = event.target.closest?.(".order-handle");
   if (grip && event.altKey && ["ArrowUp", "ArrowDown"].includes(event.key)) {
     event.preventDefault();
-    const id = grip.closest(".acc").dataset.accountId;
+    const id = controlCard(grip).dataset.accountId;
     moveAccount(id, event.key === "ArrowUp" ? -1 : 1, `order-${id}`);
     return;
   }
@@ -2080,7 +2104,7 @@ function clearOrderDrag() {
 }
 document.addEventListener("dragstart", event => {
   const grip = event.target.closest?.(".order-handle");
-  const card = grip?.closest(".acc");
+  const card = grip && controlCard(grip);
   if (!card || ui.orderSaving || card.classList.contains("current")) return;
   closeMenu();
   ui.dragId = card.dataset.accountId;
@@ -2092,8 +2116,8 @@ document.addEventListener("dragover", event => {
   if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
   if (!ui.dragId) return;
   document.querySelectorAll(".drop-before,.drop-after").forEach(card => card.classList.remove("drop-before", "drop-after"));
-  const card = event.target.closest?.(".acc:not(.current)");
-  if (!card || card.dataset.accountId === ui.dragId) return;
+  const card = controlCard(event.target);
+  if (!card || card.classList.contains("current") || card.dataset.accountId === ui.dragId) return;
   event.preventDefault();
   event.dataTransfer.dropEffect = "move";
   const rect = card.getBoundingClientRect();
@@ -2103,7 +2127,8 @@ document.addEventListener("drop", event => {
   if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
   if (!ui.dragId) return;
   event.preventDefault();
-  const source = ui.dragId, card = event.target.closest?.(".acc:not(.current)");
+  const source = ui.dragId, candidate = controlCard(event.target);
+  const card = candidate?.classList.contains("current") ? null : candidate;
   const target = card?.dataset.accountId;
   const rect = card?.getBoundingClientRect();
   const before = rect && event.clientY < rect.top + rect.height / 2;
