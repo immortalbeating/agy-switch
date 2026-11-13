@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from playwright.sync_api import sync_playwright
 
@@ -58,11 +58,11 @@ class QuotaUITests(unittest.TestCase):
             "localStorage.setItem('agy.theme', " + json.dumps(theme) + ");"
             "localStorage.setItem('agy.lang', " + json.dumps(lang) + ");")
         account = {"id": "fixture-account", "label": "示例账号", "email": "demo@example.invalid",
-                   "current": False, "notch": "#4c8bd9", "plan_type": "Pro",
+                   "current": True, "notch": "#4c8bd9", "plan_type": "Pro",
                    "quota": {"tier": "Pro", "fetched_at": datetime.now(timezone.utc).isoformat(),
                              "groups": copy.deepcopy(groups), "error": error}}
         account["quota"].update(quota_extra or {})
-        payload = {"accounts": [account], "current_id": None, "live_email": None,
+        payload = {"accounts": [account], "current_id": "fixture-account", "live_email": None,
                    "ide_email": None, "creds_email": None, "ide_running": False,
                    "ide_path": "", "creds_path": ""}
 
@@ -75,13 +75,21 @@ class QuotaUITests(unittest.TestCase):
             elif path == "/api/prefs":
                 request.fulfill(json={"theme": theme, "lang": lang, "close_to_tray": True})
             elif path == "/api/quota":
-                request.fulfill(json=payload["accounts"][0])
+                account_id = parse_qs(urlsplit(request.request.url).query).get("id", ["fixture-account"])[0]
+                request.fulfill(json=next(item for item in payload["accounts"] if item["id"] == account_id))
             elif path == "/api/switch":
                 account_id = request.request.post_data_json["id"]
                 payload["current_id"] = account_id
                 for item in payload["accounts"]:
                     item["current"] = item["id"] == account_id
                 request.fulfill(json={"ok": True, "restart_needed": False})
+            elif path in ("/api/rename", "/api/export", "/api/delete"):
+                data = request.request.post_data_json
+                if path == "/api/rename":
+                    next(item for item in payload["accounts"] if item["id"] == data["id"])["label"] = data["label"]
+                elif path == "/api/delete":
+                    payload["accounts"] = [item for item in payload["accounts"] if item["id"] != data["id"]]
+                request.fulfill(json={"ok": True, "content": "{}"})
             else:
                 request.fulfill(status=404, json={"error": "Unexpected fixture request"})
 
@@ -140,7 +148,7 @@ class QuotaUITests(unittest.TestCase):
     def test_refresh_can_add_a_third_group_without_a_second_gemini_label(self):
         page, payload = self.open_ui(shared_groups())
         payload["accounts"][0]["quota"]["groups"] = three_groups()
-        page.locator(".acc-ghost-actions button").first.click()
+        page.locator(".acc-refresh").click()
         page.wait_for_function("document.querySelectorAll('.quota-table tbody tr').length === 3")
         self.assertEqual(page.locator(".quota-table tbody .qtitle").all_text_contents(),
                          ["Gemini", "Gemini 4 Argon", "Claude / GPT"])
@@ -163,6 +171,128 @@ class QuotaUITests(unittest.TestCase):
         self.assertEqual(page.evaluate("state.data.accounts.map(a => a.id)"), [str(i) for i in range(5)])
         self.assertLess(page.evaluate("window.scrollY"), 1)
 
+
+    def test_compact_cards_preserve_expansion_across_poll_and_switch(self):
+        page, payload = self.open_ui(three_groups())
+        template = payload["accounts"][0]
+        payload["accounts"] = [dict(copy.deepcopy(template), id=str(i), label=f"Account {i}", current=i == 1)
+                               for i in range(3)]
+        payload["current_id"] = "1"
+        page.reload()
+        cards = page.locator("#list .acc")
+        self.assertEqual(cards.evaluate_all("es => es.map(e => e.dataset.accountId)"), ["1", "0", "2"])
+        self.assertEqual(cards.evaluate_all("es => es.map(e => e.dataset.expanded)"), ["true", "false", "false"])
+        current = page.locator('.acc[data-account-id="1"]')
+        other = page.locator('.acc[data-account-id="0"]')
+        current.locator('.acc-expand').click()
+        other.locator('.acc-expand').click()
+        page.evaluate("loadState()")
+        page.wait_for_function("document.querySelector('[data-account-id=\"0\"]').dataset.expanded === 'true'")
+        self.assertEqual(current.get_attribute("data-expanded"), "false")
+        self.assertTrue(other.locator('.acc-details').is_visible())
+        self.assertTrue(current.locator('.acc-details').is_hidden())
+        page.on("dialog", lambda dialog: dialog.accept())
+        page.locator('.acc[data-account-id="2"] .btn-switch').click()
+        page.wait_for_function("document.querySelector('#list .acc').dataset.accountId === '2'")
+        self.assertEqual(page.locator('#list .acc').first.get_attribute('data-expanded'), 'true')
+        self.assertEqual(page.locator('.acc[data-account-id="1"]').get_attribute('data-expanded'), 'false')
+        self.assertEqual(page.locator('.acc[data-account-id="0"]').get_attribute('data-expanded'), 'true')
+        self.assertEqual(page.evaluate("state.data.accounts.map(a => a.id)"), ["0", "1", "2"])
+
+    def test_collapsed_summary_uses_real_pools_and_expands(self):
+        groups = [{"name": "Carbon", "buckets": [bucket("5h", 17)]},
+                  {"name": "Unknown Pool", "buckets": [bucket("week", 31)]},
+                  {"name": "Gemini 4 Argon", "buckets": [bucket("week", 68)]},
+                  {"name": "Extra Pool", "buckets": [bucket("week", 42)]}]
+        page, _ = self.open_ui(groups)
+        card = page.locator('.acc')
+        card.locator('.acc-expand').click()
+        items = card.locator('.quota-summary > .quota-summary-item')
+        self.assertEqual(items.count(), 3)
+        for item, name, pct in zip(items.all(), ['Carbon', 'Unknown Pool', 'Argon'], ['17%', '31%', '68%']):
+            self.assertIn(name, item.inner_text())
+            self.assertIn(pct, item.inner_text())
+        more = card.locator('.quota-more')
+        self.assertIn('+1', more.inner_text())
+        self.assertTrue(card.locator('.acc-details').is_hidden())
+        more.click()
+        self.assertTrue(card.locator('.acc-details').is_visible())
+        self.assertEqual(card.locator('.quota-table tbody tr').first.locator('.qmissing').count(), 1)
+
+    def test_menu_actions_closure_and_poll_focus(self):
+        page, payload = self.open_ui(shared_groups())
+        card = page.locator('.acc')
+        toggle = card.locator('.acc-menu-toggle')
+        toggle.click()
+        menu = card.locator('.action-menu')
+        self.assertTrue(menu.is_visible())
+        self.assertEqual(menu.locator('.menu-item').count(), 4)
+        menu.locator('[data-action="refresh"]').focus()
+        page.evaluate('loadState()')
+        page.wait_for_function("document.activeElement?.dataset.focusKey === 'refresh-fixture-account'")
+        page.keyboard.press('Escape')
+        self.assertTrue(menu.is_hidden())
+        self.assertEqual(page.evaluate('document.activeElement.dataset.focusKey'), 'account-menu-fixture-account-toggle')
+        toggle.click()
+        page.locator('.acc-name').click()
+        self.assertTrue(menu.is_hidden())
+        toggle.click()
+        with page.expect_response(lambda response: '/api/quota?' in response.url):
+            menu.locator('[data-action="refresh"]').click()
+        self.assertTrue(menu.is_hidden())
+        page.on('dialog', lambda dialog: dialog.accept('Renamed' if dialog.type == 'prompt' else None))
+        toggle.click()
+        menu.locator('[data-action="rename"]').click()
+        page.wait_for_function("state.data.accounts[0].label === 'Renamed'")
+        with page.expect_download() as download:
+            toggle.click()
+            menu.locator('[data-action="export"]').click()
+        self.assertTrue(download.value.suggested_filename.endswith('.json'))
+        toggle.click()
+        menu.locator('[data-action="delete"]').click()
+        page.wait_for_function("state.data.accounts.length === 0")
+        self.assertEqual(payload['accounts'], [])
+
+    def test_add_and_import_dialog_cancel_restores_menu_focus(self):
+        for action in ('#btnAdd', '#btnImport'):
+            with self.subTest(action=action):
+                page, _ = self.open_ui(shared_groups())
+                page.locator('#btnAddMenu').click()
+                page.locator(action).click()
+                dialog = page.locator('#dlgAdd' if action == '#btnAdd' else '#dlgImport')
+                self.assertTrue(dialog.is_visible())
+                page.keyboard.press('Escape')
+                self.assertEqual(page.evaluate('document.activeElement.id'), 'btnAddMenu')
+
+    def test_demo_screenshots(self):
+        output = Path(__file__).resolve().parents[1] / '.ref' / 'compact-cards-v1.2.0'
+        output.mkdir(parents=True, exist_ok=True)
+        groups = [{"name": "Carbon", "buckets": [bucket("5h", 17)]},
+                  {"name": "Unknown Pool", "buckets": [bucket("week", 31)]},
+                  {"name": "Gemini 4 Argon", "buckets": [bucket("week", 68)]},
+                  {"name": "Extra Pool", "buckets": [bucket("week", 42)]}]
+        for width in (320, 360, 520):
+            for theme in ('light', 'dark'):
+                page, payload = self.open_ui(groups, width=width, theme=theme)
+                template = payload['accounts'][0]
+                payload['accounts'] = [dict(copy.deepcopy(template), id=str(i), label=f'演示账号 {i + 1}',
+                                            email=f'demo{i + 1}@example.invalid', current=i == 1) for i in range(3)]
+                payload['current_id'] = '1'
+                page.reload()
+                page.locator('#list .acc').first.wait_for()
+                page.screenshot(path=str(output / f'demo-{width}-{theme}.png'), full_page=True)
+        (output / 'metadata.json').write_text(json.dumps({"fixtures": "synthetic example.invalid accounts; no real authentication", "widths": [320, 360, 520], "themes": ["light", "dark"], "browser": "headless Chromium --enable-gpu"}, ensure_ascii=False, indent=2), encoding='utf-8')
+
+    def test_email_as_display_name_is_not_duplicated(self):
+        page, payload = self.open_ui(shared_groups(), width=320)
+        email = 'a-very-long-account-address-that-needs-ellipsis@example.invalid'
+        payload['accounts'][0].update(label=email, email=email)
+        page.reload()
+        card = page.locator('.acc')
+        self.assertIn(email, card.locator('.acc-name').get_attribute('title'))
+        self.assertEqual(card.locator('.acc-email').count(), 0)
+        self.assertEqual(card.inner_text().count(email), 1)
+
     def test_sync_time_has_room_and_full_detail_with_pointer_and_keyboard(self):
         for width, theme, lang in [(320, "light", "zh"), (360, "dark", "en")]:
             with self.subTest(width=width, theme=theme, lang=lang):
@@ -180,7 +310,7 @@ class QuotaUITests(unittest.TestCase):
                 self.assertIn("11-03 16:30", sync.locator("time").inner_text())
                 self.assertTrue(sync.evaluate("""e => {
                     const time = e.querySelector('time').getBoundingClientRect();
-                    const actions = e.parentElement.querySelector('.acc-ghost-actions').getBoundingClientRect();
+                    const actions = e.parentElement.querySelector('.acc-refresh').getBoundingClientRect();
                     return time.right < actions.left;
                 }"""))
                 self.assertTrue(detail.is_hidden())
@@ -192,8 +322,7 @@ class QuotaUITests(unittest.TestCase):
                 page.keyboard.press("Escape")
                 self.assertTrue(detail.is_hidden())
                 page.locator(".acc-name").hover()
-                page.locator(".btn-switch").focus()
-                page.keyboard.press("Tab")
+                sync.focus()
                 self.assertTrue(sync.evaluate("e => document.activeElement === e"))
                 self.assertTrue(detail.is_visible())
                 page.keyboard.press("Escape")
@@ -215,7 +344,7 @@ class QuotaUITests(unittest.TestCase):
                 self.assertEqual(page.locator(".qbar").count(), 0)
                 self.assertFalse(page.locator(".q-error").evaluate("e => e.scrollWidth > e.clientWidth"))
                 payload["accounts"][0]["quota"] = {"error": "", "groups": shared_groups()}
-                page.locator(".acc-ghost-actions button").first.click()
+                page.locator(".acc-refresh").click()
                 page.locator(".q-error").wait_for(state="hidden")
                 self.assertEqual(page.locator(".q-error").count(), 0)
                 self.assertEqual(page.locator(".qbar").count(), 4)
